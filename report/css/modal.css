@@ -219,42 +219,6 @@
 #modal-status.ok { color: var(--green); }
 #modal-status.err { color: var(--red); }
 
-/* ---- LiteLLM price search (pricing modal) ---- */
-#p-search-btn { width: 100%; justify-content: center; }
-#p-search-body { margin-top: var(--space-2); }
-.p-search-results {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  margin-top: var(--space-2);
-  max-height: 180px;
-  overflow-y: auto;
-}
-.price-result {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  width: 100%;
-  text-align: left;
-  padding: var(--space-1) var(--space-2);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font-size: var(--text-sm);
-  font-family: inherit;
-  cursor: pointer;
-  transition: border-color 100ms, background 100ms;
-}
-.price-result:hover { border-color: var(--accent); background: var(--surface2); }
-.price-result:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.price-result .price-result-key { min-width: 0; overflow-wrap: anywhere; }
-.price-result .price-val { flex-shrink: 0; }
-.price-result-empty { font-size: var(--text-sm); color: var(--muted); padding: var(--space-1) 0; }
-#p-search-status { font-size: var(--text-sm); margin-top: var(--space-2); min-height: 14px; }
-#p-search-status.ok { color: var(--green); }
-#p-search-status.err { color: var(--red); }
 .security-note {
   margin-top: var(--space-4);
   padding: var(--space-2) var(--space-3);

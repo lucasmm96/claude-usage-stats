@@ -169,7 +169,6 @@ function openPricingModal() {
   document.getElementById('p-clear-btn').style.display = hasPricing ? 'inline-flex' : 'none';
 
   rebuildConfiguredList(data);
-  collapsePriceSearch();
   switchPricingTab('prices');
 
   document.getElementById('pricing-modal-overlay').classList.add('open');
@@ -349,149 +348,11 @@ function clearPrices() {
   if (globalData) renderAll();
 }
 
-// ---- LiteLLM price search ----
-let litellmData = null;   // parsed JSON, in-memory cache per page session
-let litellmIndex = null;  // [[normKey, rawKey], ...] built once after fetch
-const LITELLM_PRICES_URL = 'https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json';
-// Primary slug providers rank above "reseller" variants (azure/, bedrock-style dot keys, ...)
-const LITELLM_PRIMARY_PROVIDERS = new Set(['anthropic', 'openai', 'google', 'gemini', 'deepseek', 'xai', 'mistral', 'meta', 'cohere', 'groq', 'qwen', 'amazon', 'databricks', 'perplexity', 'ai21']);
-
+// ---- Helpers ----
+// Normalize a name for matching: lowercase, drop non-alphanumeric.
+// Used by findPrice (utils.js) and by the Portkey model lookup (portkey.js).
 function normKey(s) {
   return String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-function toMtokPrice(perToken) {
-  if (typeof perToken !== 'number' || !isFinite(perToken)) return '';
-  // litellm prices are per token; $/MTok = value * 1e6 (round kills float noise)
-  return Math.round(perToken * 1e6 * 1e6) / 1e6;
-}
-
-function setPriceSearchStatus(type, msg) {
-  const el = document.getElementById('p-search-status');
-  if (!el) return;
-  el.textContent = msg;
-  el.className = type;
-}
-
-function collapsePriceSearch() {
-  const body = document.getElementById('p-search-body');
-  if (!body) return;
-  body.style.display = 'none';
-  document.getElementById('p-search-btn').textContent = '🔍 Search price (litellm)';
-  document.getElementById('p-search-input').value = '';
-  document.getElementById('p-search-results').innerHTML = '';
-  setPriceSearchStatus('', '');
-}
-
-function togglePriceSearch() {
-  const body = document.getElementById('p-search-body');
-  if (body.style.display !== 'none') { collapsePriceSearch(); return; }
-  body.style.display = '';
-  document.getElementById('p-search-btn').textContent = 'Hide price search';
-  loadLiteLLMPrices();
-}
-
-async function loadLiteLLMPrices() {
-  const btn = document.getElementById('p-search-btn');
-  if (!litellmData) {
-    btn.disabled = true;
-    btn.textContent = 'Loading…';
-    setPriceSearchStatus('', 'Loading price list…');
-    try {
-      const res = await fetch(LITELLM_PRICES_URL);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      litellmData = JSON.parse(await res.text());
-      litellmIndex = Object.keys(litellmData).map(key => [normKey(key), key]);
-    } catch (e) {
-      setPriceSearchStatus('err', 'Could not load litellm prices: ' + e.message);
-      return;
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Hide price search';
-    }
-  }
-  const input = document.getElementById('p-search-input');
-  input.value = currentPricingModelName(); // prefill with the model being edited
-  setPriceSearchStatus('', litellmIndex.length + ' models loaded');
-  renderLiteLLMResults();
-  input.focus();
-}
-
-// Name of the model currently being edited in the pricing modal (same resolution as savePrices)
-function currentPricingModelName() {
-  const select = document.getElementById('p-model-select');
-  if (!select) return '';
-  if (select.value !== '__new__') return select.value;
-  return document.getElementById('p-model-name').value.trim();
-}
-
-function searchLiteLLM(q) {
-  const nq = normKey(q);
-  if (!nq) return [];
-  const scored = [];
-  for (const [nk, key] of litellmIndex) {
-    if (!nk.includes(nq)) continue;
-    let rank = nk === nq ? 0 : nk.startsWith(nq) ? 1 : 2;   // exact > prefix > substring
-    if (rank > 0 && LITELLM_PRIMARY_PROVIDERS.has(normKey(key.split('/')[0]))) rank--;
-    const entry = litellmData && litellmData[key];
-    const noPrice = entry && typeof entry.input_cost_per_token === 'number' ? 0 : 1;
-    scored.push([noPrice, rank, key.length, key]); // priced entries first, then exact > prefix > substring, shorter key
-  }
-  scored.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2] || (a[3] < b[3] ? -1 : a[3] > b[3] ? 1 : 0));
-  return scored.slice(0, 8).map(x => x[3]);
-}
-
-function renderLiteLLMResults() {
-  const box = document.getElementById('p-search-results');
-  const q = document.getElementById('p-search-input').value.trim();
-  box.innerHTML = '';
-  if (!q || !litellmIndex) return;
-  const keys = searchLiteLLM(q);
-  if (!keys.length) {
-    const empty = document.createElement('div');
-    empty.className = 'price-result-empty';
-    empty.textContent = 'No matching models';
-    box.appendChild(empty);
-    return;
-  }
-  for (const key of keys) {
-    const entry = litellmData[key];
-    const row = document.createElement('button');
-    row.type = 'button';
-    row.className = 'price-result';
-    const keySpan = document.createElement('span');
-    keySpan.className = 'price-result-key';
-    keySpan.textContent = key;
-    const costSpan = document.createElement('span');
-    costSpan.className = 'price-val';
-    const inCost = entry ? toMtokPrice(entry.input_cost_per_token) : '';
-    costSpan.textContent = inCost !== '' ? '$' + inCost + '/MTok' : '—';
-    row.append(keySpan, costSpan);
-    row.addEventListener('click', () => applyLitellmPrice(key));
-    box.appendChild(row);
-  }
-}
-
-function applyLitellmPrice(key) {
-  const entry = litellmData[key];
-  if (!entry) return;
-  const hasAny = ['input_cost_per_token', 'cache_read_input_token_cost',
-                  'cache_creation_input_token_cost', 'output_cost_per_token']
-    .some(f => typeof entry[f] === 'number');
-  if (!hasAny) {
-    setPriceSearchStatus('err', 'No price data in litellm for: ' + key);
-    return;
-  }
-  const cb = document.getElementById('p-free-cb');
-  if (cb.checked) {
-    cb.checked = false;  // programmatic uncheck fires no change event; re-enable fields explicitly
-    onFreeToggle();
-  }
-  document.getElementById('p-input').value  = toMtokPrice(entry.input_cost_per_token);
-  document.getElementById('p-cr').value     = toMtokPrice(entry.cache_read_input_token_cost);
-  document.getElementById('p-cw').value     = toMtokPrice(entry.cache_creation_input_token_cost);
-  document.getElementById('p-output').value = toMtokPrice(entry.output_cost_per_token);
-  setPriceSearchStatus('ok', 'Prices applied: ' + key);
 }
 
 // Events (only in browser)
@@ -499,23 +360,6 @@ if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     const select = document.getElementById('p-model-select');
     if (select) select.addEventListener('change', loadModelPrices);
-    const searchInput = document.getElementById('p-search-input');
-    if (searchInput) {
-      searchInput.addEventListener('input', renderLiteLLMResults);
-      searchInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter') {
-          const first = document.querySelector('#p-search-results .price-result');
-          if (first) { first.click(); e.preventDefault(); } // apply top result
-          return;
-        }
-        if (e.key !== 'Escape') return;
-        if (searchInput.value) {
-          searchInput.value = '';
-          renderLiteLLMResults();
-          e.stopPropagation(); // keep the modal open; empty input lets Escape close it
-        }
-      });
-    }
   });
 }
 
