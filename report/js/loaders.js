@@ -16,6 +16,7 @@ function loadJson(text, source) {
     globalData = d;
     stopAutoRefresh();
     renderAll();
+    kickoffSync();
     if (source && (source.type === 'url' || source.type === 'github' || source.type === 'api')) {
       startAutoRefresh(source);
     }
