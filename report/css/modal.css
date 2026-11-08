@@ -15,7 +15,7 @@
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
-  width: 420px;
+  width: 800px;
   max-width: calc(100vw - var(--space-7));
   max-height: calc(100vh - var(--space-8));
   max-height: calc(100dvh - var(--space-8));
@@ -173,19 +173,53 @@
   min-height: 40px;
   overflow-y: auto;
 }
-.price-item {
-  display: flex;
+.price-grid-head, .price-item {
+  display: grid;
+  /* name gets the leftover space and a generous minimum; numbers keep stable widths */
+  grid-template-columns: minmax(220px, 1fr) repeat(4, 64px) 92px 28px;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--space-2);
   padding: var(--space-1) var(--space-2);
+}
+.price-grid-head {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-1);
+  white-space: nowrap;
+}
+.price-item {
   background: var(--surface);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   font-size: var(--text-sm);
-  gap: var(--space-2);
 }
 .price-item strong { color: var(--text); }
-.price-val { font-family: monospace; font-size: var(--text-xs); color: var(--muted); }
+.price-grid-head .num, .price-item .num {
+  font-family: monospace;
+  font-size: var(--text-xs);
+  text-align: right;
+  white-space: nowrap;
+}
+.price-item .num { color: var(--text); }
+.price-item .p-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.price-item .p-src { margin-right: 5px; }
+.price-item .p-src.src-manual { color: #f59e0b; }
+.price-item .p-src.src-auto { color: var(--green); }
+.price-item .p-src.src-fail { color: var(--red); }
+.price-item .price-meta {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .btn-remove {
   padding: 2px var(--space-1);
   border-radius: var(--radius-sm);

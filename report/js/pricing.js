@@ -161,7 +161,8 @@ function openPricingModal() {
   optg.appendChild(opt);
   select.appendChild(optg);
 
-  select.value = allModels[0] || '__new__';
+  // Default to the "add manually" state — never preload an existing model's price
+  select.value = '__new__';
   loadModelPrices();
   updateUnpricedBadge();
 
@@ -257,13 +258,31 @@ function updateUnpricedBadge() {
 function rebuildConfiguredList(data) {
   const list = document.getElementById('p-configured-list');
   list.innerHTML = '';
+  const head = document.createElement('div');
+  head.className = 'price-grid-head';
+  head.innerHTML = `<span>Model</span><span class="num">Input</span><span class="num">Cache rd</span><span class="num">Cache wr</span><span class="num">Output</span><span>Sync</span><span></span>`;
+  list.appendChild(head);
   for (const [model, price] of Object.entries(data.prices)) {
     const item = document.createElement('div');
     item.className = 'price-item';
+    const src = price.source || 'legacy';
+    // Inline source icon, same style as the model dropdown (e.g. "⚠ Model")
+    const isManual = src === 'manual' || src === 'legacy';
+    const srcIcon = isManual ? '✎' : (price.autoFailed ? '⚠' : '✓');
+    const srcCls = isManual ? 'src-manual' : (price.autoFailed ? 'src-fail' : 'src-auto');
+    const srcTitle = src === 'manual' ? 'Manual price'
+      : price.autoFailed ? 'Auto-population failed (not found on Portkey)'
+      : src === 'portkey' ? 'Auto-populated from Portkey'
+      : 'Legacy (set before Portkey sync)';
+    const syncLabel = price.syncAt ? new Date(price.syncAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'never';
     item.innerHTML = `
-      <span><strong>${model}</strong></span>
-      <span class="price-val">${price.input}/${price.cacheRead}/${price.cacheWrite}/${price.output}</span>
-      <button class="btn-remove" onclick="removeModel('${model.replace(/'/g, "\\'")}')">✕</button>
+      <span class="p-name" title="${model}"><span class="p-src ${srcCls}" title="${srcTitle}">${srcIcon}</span><strong>${model}</strong></span>
+      <span class="num">${price.input}</span>
+      <span class="num">${price.cacheRead}</span>
+      <span class="num">${price.cacheWrite}</span>
+      <span class="num">${price.output}</span>
+      <span class="price-meta" title="Last sync: ${syncLabel}">${syncLabel}</span>
+      <button class="btn-remove" title="Remove" onclick="removeModel('${model.replace(/'/g, "\\'")}')">✕</button>
     `;
     list.appendChild(item);
   }
