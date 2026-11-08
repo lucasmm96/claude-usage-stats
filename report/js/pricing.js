@@ -348,6 +348,30 @@ function clearPrices() {
   if (globalData) renderAll();
 }
 
+// ---- Manual resync via Portkey (button in the pricing modal) ----
+let _resyncing = false;
+async function resyncPrices() {
+  if (_resyncing || !globalData || typeof syncPrices !== 'function') return;
+  _resyncing = true;
+  const btn = document.getElementById('p-resync-btn');
+  const status = document.getElementById('p-resync-status');
+  if (btn) { btn.disabled = true; btn.textContent = 'Resyncing…'; }
+  if (status) status.textContent = 'Fetching prices from Portkey…';
+  try {
+    await syncPrices(globalData.sessions);
+    const t = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    if (status) status.textContent = 'Done at ' + t;
+    rebuildConfiguredList(getPricingData());
+    updateUnpricedBadge();
+    loadModelPrices();
+  } catch (e) {
+    if (status) status.textContent = 'Sync failed: ' + e.message;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Resync prices (Portkey)'; }
+    _resyncing = false;
+  }
+}
+
 // ---- Helpers ----
 // Normalize a name for matching: lowercase, drop non-alphanumeric.
 // Used by findPrice (utils.js) and by the Portkey model lookup (portkey.js).

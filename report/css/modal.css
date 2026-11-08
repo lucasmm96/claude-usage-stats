@@ -219,6 +219,9 @@
 #modal-status.ok { color: var(--green); }
 #modal-status.err { color: var(--red); }
 
+#p-resync-btn { width: 100%; justify-content: center; }
+#p-resync-status { font-size: var(--text-sm); color: var(--muted); margin-top: var(--space-1); min-height: 14px; }
+
 .security-note {
   margin-top: var(--space-4);
   padding: var(--space-2) var(--space-3);
