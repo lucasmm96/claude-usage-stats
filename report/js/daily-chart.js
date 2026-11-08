@@ -24,6 +24,9 @@ function computeDailyTotals(range, fromDate, toDate) {
 
   if (range === 'custom') {
     entries = entries.filter(([d]) => d >= fromDate && d <= toDate);
+  } else if (range === 'today') {
+    const todayStr = localDateStr(new Date());
+    entries = entries.filter(([d]) => d === todayStr);
   } else if (range === 'month') {
     const today = new Date();
     const cutoffStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;

@@ -98,6 +98,7 @@ function isInDateRange(isoDate) {
     if (!currentDateFrom || !currentDateTo) return true;
     return day >= currentDateFrom && day <= currentDateTo;
   }
+  if (r === 'today') return day === localDateStr(new Date());
   if (r === 'month') {
     const today = new Date();
     const cutoff = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
