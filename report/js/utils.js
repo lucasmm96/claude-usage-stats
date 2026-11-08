@@ -48,13 +48,23 @@ function getFilteredSessions() {
 }
 
 // Resolve a price entry for a model key. Exact match first, then a normalized
-// match (case/punctuation-insensitive), then a normalized containment match
-// (e.g. "DeepSeek V4 Flash 0731" vs "DeepSeek: DeepSeek V4 Flash 0731").
-// Containment only applies when the shorter key has >= 10 alphanumerics, so
-// short names like "Sonnet 4" never match "Sonnet 4.6". Returns null if none.
-function findPrice(key, pricing) {
+// match (case/punctuation-insensitive), then a normalized containment match.
+// Containment only applies when the shorter key has >= 10 alphanumerics.
+// Optional timestamp: if provided, checks history for price valid at that time.
+function findPrice(key, pricing, timestamp) {
   if (!key || !pricing || !pricing.prices) return null;
-  if (pricing.prices[key] !== undefined) return pricing.prices[key];
+  const entry = pricing.prices[key];
+  if (entry !== undefined) {
+    // If timestamp provided, check history for price at that point
+    if (timestamp && entry.history && entry.history.length > 0) {
+      const past = entry.history.filter(h => h.at <= timestamp);
+      if (past.length > 0) {
+        const h = past[past.length - 1];
+        return { input: h.input, cacheRead: h.cacheRead, cacheWrite: h.cacheWrite, output: h.output };
+      }
+    }
+    return entry;
+  }
   const nk = normKey(key);
   if (!nk) return null;
   let best = null, bestLen = 0;
@@ -73,10 +83,10 @@ function findPrice(key, pricing) {
 }
 
 // Returns the pricing entry for a log entry, using entry.model with fallback to sessModel.
-// Always returns an object with numeric fields (never undefined).
-function entryModelPrice(entry, sessModel, pricing) {
+// Optional timestamp for retroactive pricing (history lookup).
+function entryModelPrice(entry, sessModel, pricing, timestamp) {
   const key = entry.model || sessModel || '';
-  return findPrice(key, pricing) || pricing._default;
+  return findPrice(key, pricing, timestamp) || pricing._default;
 }
 
 function isInDateRange(isoDate) {

@@ -62,15 +62,15 @@ function renderDailyChart(range, fromDate, toDate) {
   if (pricingData) {
     const costByDay = {};
     for (const sess of getFilteredSessions()) {
-      const modelPrice = pricingData.prices[sess.model || ''] || pricingData._default;
       for (const e of dedupe(sess.log || [])) {
         if (e.event || !e.at) continue;
         const day = localDateStr(e.at);
+        const mp = entryModelPrice(e, sess.model || '', pricingData, e.at);
         costByDay[day] = (costByDay[day] || 0)
-          + (e.input_tokens        || 0) / 1e6 * modelPrice.input
-          + (e.cache_read_tokens   || 0) / 1e6 * modelPrice.cacheRead
-          + (e.cache_write_tokens  || 0) / 1e6 * modelPrice.cacheWrite
-          + (e.output_tokens       || 0) / 1e6 * modelPrice.output;
+          + (e.input_tokens        || 0) / 1e6 * mp.input
+          + (e.cache_read_tokens   || 0) / 1e6 * mp.cacheRead
+          + (e.cache_write_tokens  || 0) / 1e6 * mp.cacheWrite
+          + (e.output_tokens       || 0) / 1e6 * mp.output;
       }
     }
     dailyCosts = entries.map(([d]) => costByDay[d] || 0);
