@@ -1,7 +1,7 @@
 // ---- Pricing storage format ----
 // New: { "prices": { "Sonnet 4.6": { input, cacheRead, cacheWrite, output }, ... }, "_default": { ... } }
 // Old (legacy): root level LS_PRICE_INPUT, LS_PRICE_CACHE_READ, etc
-
+// Note: MAX_HISTORY is declared once in portkey.js (global lexical env).
 function migrateOldPrices() {
   try {
     const rawIn  = localStorage.getItem(LS_PRICE_INPUT);
@@ -29,7 +29,25 @@ function getPricingData() {
   try {
     const raw = localStorage.getItem('claude_usage_stats_pricing');
     if (!raw) return { prices: {}, _default: { input: 0, cacheRead: 0, cacheWrite: 0, output: 0 } };
-    return JSON.parse(raw);
+    let data = JSON.parse(raw);
+    // Ensure _default exists
+    if (!data._default) data._default = { input: 0, cacheRead: 0, cacheWrite: 0, output: 0 };
+    // V2 schema injection (one-time)
+    if (data.version !== 2) {
+      for (const k of Object.keys(data.prices || {})) {
+        const v = data.prices[k];
+        if (!v || typeof v !== 'object') { delete data.prices[k]; continue; }
+        if (v.source === undefined) v.source = 'legacy';
+        if (v.syncAt === undefined) v.syncAt = null;
+        if (v.lastAttemptAt === undefined) v.lastAttemptAt = null;
+        if (v.autoFailed === undefined) v.autoFailed = false;
+        if (!Array.isArray(v.history)) v.history = [];
+        if (v.history.length > MAX_HISTORY) v.history = v.history.slice(-MAX_HISTORY);
+      }
+      data.version = 2;
+      try { localStorage.setItem('claude_usage_stats_pricing', JSON.stringify(data)); } catch(e) {}
+    }
+    return data;
   } catch(e) { return { prices: {}, _default: { input: 0, cacheRead: 0, cacheWrite: 0, output: 0 } }; }
 }
 
@@ -305,7 +323,12 @@ function savePrices() {
   }
 
   const data = getPricingData();
-  data.prices[modelName] = { input: pIn, cacheRead: pCR, cacheWrite: pCW, output: pOut };
+  const existing = data.prices[modelName];
+  data.prices[modelName] = {
+    input: pIn, cacheRead: pCR, cacheWrite: pCW, output: pOut,
+    source: 'manual', syncAt: null, lastAttemptAt: null, autoFailed: false,
+    history: existing && Array.isArray(existing.history) ? existing.history : []
+  };
   savePricingData(data);
   updatePricingButton();
 
