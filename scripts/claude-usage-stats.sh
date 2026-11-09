@@ -17,6 +17,20 @@ CONF="$SCRIPT_DIR/backup.conf"
 LOG_FILE="$SCRIPT_DIR/claude-usage-stats-log.json"
 CACHE_FILE="$SCRIPT_DIR/models-cache.json"
 
+# --- Serialize the log read-modify-write across concurrent hook calls ---
+# mkdir is atomic. Wait up to 3s for the lock, then proceed unlocked so the status line never hangs.
+LOG_LOCK="$LOG_FILE.lock.d"
+_lock_acquired=""
+_i=0
+while [ "$_i" -lt 60 ]; do
+  if mkdir "$LOG_LOCK" 2>/dev/null; then _lock_acquired=1; break; fi
+  _lock_age=$(( $(date +%s) - $(date -r "$LOG_LOCK" +%s 2>/dev/null || echo 0) ))
+  [ "$_lock_age" -gt 10 ] && { rmdir "$LOG_LOCK" 2>/dev/null; continue; }
+  sleep 0.05
+  _i=$((_i + 1))
+done
+trap '[ -n "$_lock_acquired" ] && rmdir "$LOG_LOCK" 2>/dev/null' EXIT
+
 result=$(node - "$input" "$LOG_FILE" "$PPID_FALLBACK" "${CLAUDE_USAGE_PROFILE:-}" "$CACHE_FILE" 2>/dev/null << 'JSEOF'
 const fs = require('fs');
 const [,, rawInput, logFile, ppidFallback, profileArg, cacheFilePath] = process.argv;
@@ -41,8 +55,9 @@ const cache_write_tokens = usage.cache_creation_input_tokens ?? 0;
 const output_tokens      = usage.output_tokens               ?? 0;
 const exchange_total     = input_tokens + cache_read_tokens + cache_write_tokens + output_tokens;
 
+let rawLog = '';
 let data = { sessions: {} };
-try { data = JSON.parse(fs.readFileSync(logFile, 'utf8')); } catch(e) {}
+try { rawLog = fs.readFileSync(logFile, 'utf8'); data = JSON.parse(rawLog); } catch(e) {}
 if (!data.sessions) data.sessions = {};
 
 let sess = data.sessions[sessionId] ?? {
@@ -84,21 +99,38 @@ if (transcriptPath) {
       fs.closeSync(fd);
       const text = buf.toString('utf8');
       const lines = text.split('\n');
-      for (let i = 0; i < lines.length - 1; i++) { // skip last (may be incomplete)
-        const line = lines[i].trim();
-        if (!line) continue;
+      const lastIdx = lines.length - 1;
+
+      // Parses one JSONL line; returns false when the line is incomplete or invalid.
+      const scanLine = (line) => {
+        const t = line.trim();
+        if (!t) return true;
         try {
-          const entry = JSON.parse(line);
+          const entry = JSON.parse(t);
           if (entry.type === 'custom-title' && entry.customTitle) {
             custom_title = entry.customTitle;
           }
           if (entry.type === 'assistant' && entry.message?.model && entry.message.model.includes('/')) {
             real_model = entry.message.model;
           }
-        } catch(e) {}
-      }
+          return true;
+        } catch(e) {
+          return false;
+        }
+      };
+
+      for (let i = 0; i < lastIdx; i++) scanLine(lines[i]);
+
+      // Final line has no trailing newline: parse it when complete, otherwise re-read it next run.
+      const lastLine     = lines[lastIdx] ?? '';
+      const lastLineDone = lastLine.trim() !== '' && scanLine(lastLine);
+
       const lastNl = text.lastIndexOf('\n');
-      title_scan_offset = readFrom + (lastNl >= 0 ? lastNl + 1 : text.length);
+      title_scan_offset = readFrom + (
+        lastLineDone ? text.length
+        : lastNl >= 0 ? lastNl + 1
+        : 0
+      );
     }
   } catch(e) {}
 }
@@ -132,12 +164,15 @@ const baseName = real_model
   : model; // fallback: display_name from payload (e.g. "Sonnet 4.6"), left untouched
 const displayModel = real_model ? applyFreeSuffix(baseName, isFree) : baseName;
 
-const effectiveName = custom_title ?? sessionName;
+// Payload session_name is live (reflects a rename immediately); scanned title is the fallback.
+const effectiveName = sessionName ?? custom_title;
 
 const is_compact = (total_in + total_out) < (prev_in + prev_out) && (prev_in + prev_out) > 0;
+let hadActivity = false;
 
 if (is_compact) {
   sess.log.push({ at: nowIso, event: 'compact', context_pct: used_pct });
+  hadActivity = true;
 } else if (exchange_total > 0) {
   const last = [...sess.log].reverse().find(e => !e.event);
   const is_dup = last &&
@@ -150,17 +185,33 @@ if (is_compact) {
       at: nowIso, input_tokens, cache_read_tokens, cache_write_tokens, output_tokens, context_pct: used_pct,
       ...(real_model ? { model: displayModel } : {}),
     });
+    hadActivity = true;
   }
 }
 
-sess._state           = { total_in, total_out, last_ctx: used_pct > 0 ? used_pct : last_ctx, custom_title, title_scan_offset, real_model };
+const nameChanged    = !!effectiveName && effectiveName !== sess.session_name;
+const modelChanged   = sess.model !== displayModel;
+const profileChanged = profile !== null && sess.profile !== profile;
+
+sess._state = { total_in, total_out, last_ctx: used_pct > 0 ? used_pct : last_ctx, custom_title, title_scan_offset, real_model };
 if (profile !== null) sess.profile = profile;
-sess.model            = displayModel;
-sess.last_activity_at = nowIso;
+sess.model = displayModel;
+// Periodic status line refreshes are not activity: only touch last_activity_at on real changes.
+if (hadActivity || nameChanged || modelChanged || profileChanged || !sess.last_activity_at) sess.last_activity_at = nowIso;
 if (effectiveName) sess.session_name = effectiveName;
 data.sessions[sessionId] = sess;
 
-try { fs.writeFileSync(logFile, JSON.stringify(data, null, 2)); } catch(e) {}
+const outLog = JSON.stringify(data, null, 2);
+if (outLog !== rawLog) {
+  const tmpLog = logFile + '.tmp.' + process.pid;
+  try {
+    fs.writeFileSync(tmpLog, outLog);
+    fs.renameSync(tmpLog, logFile); // atomic replace: concurrent readers never see a partial file
+  } catch(e) {
+    try { fs.writeFileSync(logFile, outLog); } catch(e2) {}
+    try { fs.unlinkSync(tmpLog); } catch(e2) {}
+  }
+}
 
 const session_total = sess.log
   .filter(e => !e.event)
@@ -179,6 +230,7 @@ const ctx_suffix    = ctx_was_stale ? '~' : '%';
 process.stdout.write([displayModel, ctx_int, ctx_color, ctx_suffix, tok_k].join('\t'));
 JSEOF
 )
+[ -n "$_lock_acquired" ] && rmdir "$LOG_LOCK" 2>/dev/null
 
 IFS=$'\t' read -r model ctx_int ctx_color ctx_suffix tok_k <<< "$result"
 [ -z "$model" ] && { model="Unknown"; ctx_int=0; ctx_color=32; ctx_suffix="%"; tok_k="0"; }

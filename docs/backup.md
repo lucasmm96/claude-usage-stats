@@ -28,7 +28,7 @@ git clone git@github.com:YOUR_USERNAME/claude-stats-private.git ~/claude-stats
 BACKUP_REPO="$HOME/claude-stats"   # absolute path to the clone
 BACKUP_BRANCH="main"
 BACKUP_FILE="sessions.json"
-BACKUP_PUSH_INTERVAL=600           # seconds between pushes (600 = 10 min)
+BACKUP_PUSH_INTERVAL=60            # seconds between pushes (60 = 1 min; lower = fresher report)
 ```
 
 **Step 4 — First run:**
@@ -55,7 +55,7 @@ If you want to host the report on GitHub Pages and load data from your private r
 
 ## Notes
 
-- The script does not push on every response — only commits. Pushes are throttled to once per `BACKUP_PUSH_INTERVAL` seconds.
+- The script does not push on every response — only commits. Pushes are throttled to once per `BACKUP_PUSH_INTERVAL` seconds. The report reads the pushed file, so its freshness is bounded by this interval.
 - If a push fails (no internet, auth issue), it is silently retried next time the interval elapses.
 - The `.last_push` file inside the repo tracks the last push timestamp.
 - If `BACKUP_REPO` is set but the directory does not contain a `.git` folder, the script falls back to `~/.claude/claude-usage-stats/claude-usage-stats-log.json` silently.

@@ -2,7 +2,7 @@
 
 ## How the hook works
 
-Claude Code calls the `statusLine.command` after every response, passing a JSON payload to stdin. The payload includes:
+Claude Code calls the `statusLine.command` after every response (and every `refreshInterval` seconds, if configured), passing a JSON payload to stdin. The payload includes:
 
 - `session_id` — UUID tied to the transcript file; stable across `--resume`
 - `session_name` — the name you gave the session
@@ -13,12 +13,12 @@ Claude Code calls the `statusLine.command` after every response, passing a JSON 
 
 The script processes this payload with an inline Node.js script (`node -`), which:
 
-1. Reads `~/.claude/claude-usage-stats/claude-usage-stats-log.json`
+1. Acquires a lock, then reads `~/.claude/claude-usage-stats/claude-usage-stats-log.json`
 2. Finds or creates the session entry
-3. Detects compact events (cumulative totals decrease)
-4. Deduplicates streaming artifacts (same token values fired multiple times per exchange)
-5. Appends the exchange entry to the session log
-6. Writes the file atomically
+3. Takes the title from the live `session_name` payload, falling back to the transcript scan
+4. Detects compact events (cumulative totals decrease)
+5. Deduplicates streaming artifacts (same token values fired multiple times per exchange)
+6. Appends the exchange entry and writes the file atomically; skips the write when nothing changed
 7. Outputs a tab-separated result string that the bash script formats for display
 
 ## Installation
@@ -40,10 +40,13 @@ cp scripts/claude-usage-stats.sh ~/.claude/claude-usage-stats/
 {
   "statusLine": {
     "type": "command",
-    "command": "bash ~/.claude/claude-usage-stats/claude-usage-stats.sh"
+    "command": "bash ~/.claude/claude-usage-stats/claude-usage-stats.sh",
+    "refreshInterval": 10
   }
 }
 ```
+
+`refreshInterval` re-runs the hook every N seconds in addition to event-driven updates. Without it, a session rename is only picked up after the next response; with it, renames reach the log within N seconds.
 
 **Step 3 — Verify:**
 

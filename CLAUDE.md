@@ -30,9 +30,9 @@ A Claude Code status line hook that persists token usage and context window data
 3. Node.js parses the JSON, reads `~/.claude/claude-usage-stats/claude-usage-stats-log.json`, finds/creates the session by `session_id`, then:
    - Detects compact events: `(total_in + total_out)` decreasing vs previous
    - Deduplicates streaming artifacts: identical token values on consecutive calls
-   - Scans new bytes of the JSONL transcript (from `title_scan_offset`) for `custom-title` events
+   - Prefers the live `session_name` from the payload; falls back to scanning new bytes of the JSONL transcript (from `title_scan_offset`) for `custom-title` events
    - Resolves the model slug (`_state.real_model`) to a commercial display name via `models-cache.json` or `heuristicName`
-   - Writes the updated JSON back to disk
+   - Serializes concurrent hook runs with an `mkdir` lock (stale after 10s), writes via temp file + atomic rename, and skips the write when nothing changed
    - Outputs a tab-separated string: `model\tctx_int\tctx_color\tctx_suffix\ttok_k`
 4. Bash reads those five fields and formats the final colored status line string
 5. If `BACKUP_REPO` is configured, a background subshell runs `git add/commit/push`

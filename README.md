@@ -53,12 +53,15 @@ Open (or create) `~/.claude/settings.json` and add the `statusLine` key:
 {
   "statusLine": {
     "type": "command",
-    "command": "bash ~/.claude/claude-usage-stats/claude-usage-stats.sh"
+    "command": "bash ~/.claude/claude-usage-stats/claude-usage-stats.sh",
+    "refreshInterval": 10
   }
 }
 ```
 
 If the file already has other settings, just add the `"statusLine"` block alongside them.
+
+`refreshInterval` re-runs the hook every N seconds in addition to event-driven updates. Without it, a session rename is only captured after the next response; with it, renames reach the log (and the report) within N seconds.
 
 **On Windows:** make sure you're using the Git Bash path style. The command above works as-is in Git Bash. If you're on WSL, use the Linux home path instead.
 
@@ -206,7 +209,7 @@ Auth uses your existing git credentials — no credentials go in the config file
 
 ## Session renaming
 
-When you rename a session in the Claude Code UI (or use `--title`), the new name is picked up automatically from the session transcript on the next hook call.
+When you rename a session in the Claude Code UI (or use `--title`), the new name arrives in the status line payload on the next hook call. With `refreshInterval` configured, that happens within seconds even without a new response; the transcript scan remains as fallback.
 
 ---
 
@@ -252,10 +255,10 @@ Claude Code calls `statusLine.command` after every response, piping a JSON paylo
 
 1. Reads the existing log file
 2. Finds or creates the session entry by `session_id`
-3. Scans new bytes in the JSONL transcript to detect custom-title renames
+3. Uses the live `session_name` from the payload, falling back to new transcript bytes for custom-title renames
 4. Detects compact events (cumulative totals decrease)
 5. Deduplicates duplicate hook calls (streaming artifacts)
-6. Appends the exchange entry and writes the file
+6. Appends the exchange entry and writes the file under a lock, with an atomic replace
 7. Outputs a tab-separated string that the bash layer formats for display
 
 The bash layer then optionally runs a git commit/push and an API upload in parallel background subshells.

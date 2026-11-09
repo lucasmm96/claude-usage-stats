@@ -133,11 +133,16 @@ function _arSig(data) {
   if (!data || !data.sessions) return '';
   let maxAt = '';
   let count = 0;
+  let nameSig = 0;
   for (const s of Object.values(data.sessions)) {
     if ((s.last_activity_at || '') > maxAt) maxAt = s.last_activity_at || '';
     count += (s.log || []).length;
+    // A rename changes only session_name, so hash the names into the signature.
+    const n = s.session_name || '';
+    for (let i = 0; i < n.length; i++) nameSig = (nameSig * 31 + n.charCodeAt(i)) | 0;
+    nameSig = (nameSig * 31 + 0x1f) | 0;
   }
-  return maxAt + ':' + count;
+  return maxAt + ':' + count + ':' + nameSig;
 }
 
 // ---- Visibility: pause on background, refetch on focus ----
