@@ -183,7 +183,7 @@ if (is_compact) {
   if (!is_dup) {
     sess.log.push({
       at: nowIso, input_tokens, cache_read_tokens, cache_write_tokens, output_tokens, context_pct: used_pct,
-      ...(real_model ? { model: displayModel } : {}),
+      ...((d.model && d.model.display_name) ? { model: d.model.display_name } : {}),
     });
     hadActivity = true;
   }
