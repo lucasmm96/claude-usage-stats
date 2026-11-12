@@ -168,7 +168,15 @@ async function exportApiData() {
       throw new Error(data && data.error ? data.error : 'Unexpected API response');
     }
     const sessions = {};
-    for (const [id, s] of Object.entries(data.sessions)) sessions[id] = buildLocalSession(s);
+    // The local log keeps sessions in creation order (started_at ascending);
+    // the API returns them last_activity_at DESC, so sort to match the local
+    // file layout before building the export.
+    const ordered = Object.entries(data.sessions).sort((a, b) => {
+      const ta = a[1].started_at || '';
+      const tb = b[1].started_at || '';
+      return ta < tb ? -1 : ta > tb ? 1 : 0;
+    });
+    for (const [id, s] of ordered) sessions[id] = buildLocalSession(s);
     const out = JSON.stringify({ sessions }, null, 2);
     const date = new Date().toISOString().slice(0, 10);
     const blob = new Blob([out], { type: 'application/json' });
