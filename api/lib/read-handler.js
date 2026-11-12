@@ -37,16 +37,18 @@ async function readSessions(sql, query = {}) {
       ORDER BY s.last_activity_at DESC
     `;
 
-    // Reconstruct sessions.json format
+    // Reconstruct sessions.json format. Optional columns are always emitted,
+    // with explicit nulls when unset — same shape the hook script writes
+    // locally (docs/log-format.md), so an export can round-trip byte-exact.
     const sessions = {};
     for (const row of results) {
       const sess = {
         session_id: row.session_id,
-        ...(row.session_name && { session_name: row.session_name }),
-        ...(row.model && { model: row.model }),
-        ...(row.profile && { profile: row.profile }),
-        ...(row.started_at && { started_at: row.started_at }),
-        ...(row.last_activity_at && { last_activity_at: row.last_activity_at }),
+        session_name: row.session_name,
+        profile: row.profile,
+        model: row.model,
+        started_at: row.started_at,
+        last_activity_at: row.last_activity_at,
       };
 
       if (row.state) {
