@@ -56,9 +56,12 @@ never overwritten by the sync.
 
 - Per log entry: `tokens / 1e6 × price.component`, summed over
   input/cache-read/cache-write/output. Prices without an entry fall back to `_default`.
-- **Retroactive**: `findPrice(key, pricing, timestamp)` picks the latest history entry with
-  `at <= entry.at`, so cost charts reflect the price in effect on each day, e.g. after a
-  mid-month price change. Manual prices (no history) apply to all dates.
+- **Retroactive**: `findPrice(key, pricing, timestamp)` resolves the price in effect at a
+  date. Each `history` point records the value that was **replaced** at its `at` moment, so
+  the price in effect at `t` is the value of the first history point with `at > t` — or the
+  current price when there is none. This makes cost charts (and per-entry costs in the log
+  table) reflect the price in effect on each day, e.g. after a mid-month price change, for
+  exact and fuzzy matches alike. Manual prices (no history) apply to all dates.
 - Consumed by the cost stat (`render.js`), the log table (`log-table.js`) and the daily
   cost chart (`daily-chart.js`).
 

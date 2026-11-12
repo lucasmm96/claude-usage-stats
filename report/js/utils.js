@@ -50,28 +50,21 @@ function getFilteredSessions() {
 // Resolve a price entry for a model key. Exact match first, then a normalized
 // match (case/punctuation-insensitive), then a normalized containment match.
 // Containment only applies when the shorter key has >= 10 alphanumerics.
-// Optional timestamp: if provided, checks history for price valid at that time.
+// Optional timestamp: each `history` point records the value that was REPLACED
+// at its `at` moment, so the price in effect at `timestamp` is the value of the
+// FIRST history point with `at > timestamp`; if none, the current price
+// applies. Without a timestamp the current price is always returned.
 function findPrice(key, pricing, timestamp) {
   if (!key || !pricing || !pricing.prices) return null;
   const entry = pricing.prices[key];
-  if (entry !== undefined) {
-    // If timestamp provided, check history for price at that point
-    if (timestamp && entry.history && entry.history.length > 0) {
-      const past = entry.history.filter(h => h.at <= timestamp);
-      if (past.length > 0) {
-        const h = past[past.length - 1];
-        return { input: h.input, cacheRead: h.cacheRead, cacheWrite: h.cacheWrite, output: h.output };
-      }
-    }
-    return entry;
-  }
+  if (entry !== undefined) return priceAt(entry, timestamp);
   const nk = normKey(key);
   if (!nk) return null;
   let best = null, bestLen = 0;
   for (const [k, v] of Object.entries(pricing.prices)) {
     const n = normKey(k);
     if (!n) continue;
-    if (n === nk) return v;
+    if (n === nk) return priceAt(v, timestamp);
     const shorter = n.length < nk.length ? n : nk;
     const longer  = n.length < nk.length ? nk : n;
     if (shorter.length >= 10 && longer.includes(shorter) && n.length > bestLen) {
@@ -79,7 +72,23 @@ function findPrice(key, pricing, timestamp) {
       bestLen = n.length;
     }
   }
-  return best;
+  return best ? priceAt(best, timestamp) : null;
+}
+
+// Price in effect at `timestamp`: history points record the value that was
+// replaced at their `at` moment, so the first point AFTER `timestamp` holds the
+// price that was in effect up to that point; if there is no later point the
+// current values apply. Without a timestamp (or history) the current entry is
+// returned unchanged.
+function priceAt(entry, timestamp) {
+  if (!timestamp || !entry || !Array.isArray(entry.history) || entry.history.length === 0) return entry;
+  const next = entry.history.find(h => h.at > timestamp);
+  if (next) {
+    return {
+      input: next.input, cacheRead: next.cacheRead, cacheWrite: next.cacheWrite, output: next.output
+    };
+  }
+  return entry;
 }
 
 // Returns the pricing entry for a log entry, using entry.model with fallback to sessModel.
