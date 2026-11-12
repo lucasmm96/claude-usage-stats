@@ -81,6 +81,7 @@ let custom_title       = st.custom_title       ?? null;
 let title_scan_offset  = st.title_scan_offset  ?? 0;
 let real_model         = st.real_model         ?? null; // slug, e.g. "nvidia/nemotron-3.5-lightning:free"
 if (real_model && !real_model.includes('/')) real_model = null; // clear stale direct-Anthropic slug
+let freshRealModel     = false; // true only when the scan below re-read the slug from new transcript bytes
 
 if (transcriptPath) {
   try {
@@ -112,6 +113,7 @@ if (transcriptPath) {
           }
           if (entry.type === 'assistant' && entry.message?.model && entry.message.model.includes('/')) {
             real_model = entry.message.model;
+            freshRealModel = true;
           }
           return true;
         } catch(e) {
@@ -134,6 +136,12 @@ if (transcriptPath) {
     }
   } catch(e) {}
 }
+
+// Payload display_name is authoritative for the current exchange; a slug is
+// only trusted when this call re-scanned it from new transcript bytes. Clear
+// a stale slug from _state so a model switch — or a resume with a different
+// default model — shows the model that actually answered, not the last one.
+if (!freshRealModel && d.model && d.model.display_name) real_model = null;
 
 // --- Resolve commercial name from slug ---
 
