@@ -199,7 +199,19 @@ sess.model = displayModel;
 // Periodic status line refreshes are not activity: only touch last_activity_at on real changes.
 if (hadActivity || nameChanged || modelChanged || profileChanged || !sess.last_activity_at) sess.last_activity_at = nowIso;
 if (effectiveName) sess.session_name = effectiveName;
-data.sessions[sessionId] = sess;
+// Canonical field order (docs/log-format.md): rebuild the session object so
+// profile/model sit between session_name and started_at even for sessions
+// created by older script versions that appended those keys after `log`.
+data.sessions[sessionId] = {
+  session_id: sess.session_id,
+  session_name: sess.session_name,
+  profile: sess.profile,
+  model: sess.model,
+  started_at: sess.started_at,
+  last_activity_at: sess.last_activity_at,
+  _state: sess._state,
+  log: sess.log,
+};
 
 const outLog = JSON.stringify(data, null, 2);
 if (outLog !== rawLog) {
