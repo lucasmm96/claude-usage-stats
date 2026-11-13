@@ -70,33 +70,17 @@ function renderDailyChart(range, fromDate, toDate) {
   const agg = computeDailyByModel(range, fromDate, toDate, pricingData);
   const emptyEl = document.querySelector('.daily-empty');
   const canvasEl = document.getElementById('c-daily');
-  const legendEl = document.getElementById('daily-legend');
 
   if (dailyChart) { dailyChart.destroy(); dailyChart = null; }
 
   if (!agg.days.length) {
     emptyEl.style.display = 'flex';
     canvasEl.style.display = 'none';
-    if (legendEl) legendEl.hidden = true;
     return;
   }
 
   emptyEl.style.display = 'none';
   canvasEl.style.display = '';
-
-  if (legendEl) {
-    legendEl.hidden = false;
-    legendEl.innerHTML = '';
-    for (const m of agg.models) {
-      const span = document.createElement('span');
-      const dot = document.createElement('span');
-      dot.className = 'dot';
-      dot.style.background = modelColor(m);
-      span.appendChild(dot);
-      span.appendChild(document.createTextNode(m));
-      legendEl.appendChild(span);
-    }
-  }
 
   const dayTotals = agg.days.map(d =>
     agg.models.reduce((s, m) => s + (agg.tokens[m][d] || 0), 0)

@@ -96,6 +96,12 @@ function renderModelBar() {
       };
 
       row.appendChild(cb);
+      if (value !== 'All') {
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        dot.style.background = modelColor(value);
+        row.appendChild(dot);
+      }
       row.appendChild(document.createTextNode(label));
       panel.appendChild(row);
     };
