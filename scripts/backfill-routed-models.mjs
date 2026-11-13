@@ -131,6 +131,7 @@ try {
   throw e;
 }
 const changes = [];       // { sessionId, at, old, new }
+const lastSlug = {};      // sessionId -> slug of its last matched exchange
 const stats = { sessions: 0, entries: 0, matched: 0, ambiguous: 0, unmatched: 0, noTranscript: 0 };
 
 for (const [sessionId, sess] of Object.entries(data.sessions || {})) {
@@ -148,19 +149,39 @@ for (const [sessionId, sess] of Object.entries(data.sessions || {})) {
     if (!m.ok) { stats[m.reason]++; continue; }
     stats.matched++;
     changes.push({ sessionId, at: e.at, old: e.model, new: resolveName(m.slug), slug: m.slug });
+    lastSlug[sessionId] = m.slug;
   }
 }
 
-const affectedSessions = new Set(changes.map(c => c.sessionId));
+// The session-level `model` may still name the router alias: it is derived from
+// _state.real_model, which router sessions leave null (payload-only). Fix it
+// from the session's last non-alias entry (the last exchange's model after the
+// entry backfill above) — deterministic and conservative: no concrete model,
+// no fix.
+const sessionFixes = [];
+for (const [sessionId, sess] of Object.entries(data.sessions || {})) {
+  if (!sess || !ROUTER_ALIASES.has(sess.model)) continue;
+  const lastConcrete = [...(sess.log || [])].reverse()
+    .find(e => !e.event && e.model && !ROUTER_ALIASES.has(e.model));
+  if (lastConcrete && lastConcrete.model !== sess.model) {
+    sessionFixes.push({ sessionId, old: sess.model, new: lastConcrete.model });
+  }
+}
+
+const affectedSessions = new Set([
+  ...changes.map(c => c.sessionId),
+  ...sessionFixes.map(f => f.sessionId),
+]);
 console.log(`sessions with router entries : ${stats.sessions}`);
 console.log(`router entries total         : ${stats.entries}`);
 console.log(`  matched (will fix)         : ${stats.matched}`);
 console.log(`  ambiguous (skipped)        : ${stats.ambiguous}`);
 console.log(`  unmatched (skipped)        : ${stats.unmatched}`);
 console.log(`  no transcript (skipped)    : ${stats.noTranscript}`);
+console.log(`session model fixes          : ${sessionFixes.length}`);
 
-if (changes.length === 0) {
-  console.log('\nNothing to backfill (no router-alias entries left — run twice is a no-op).');
+if (changes.length === 0 && sessionFixes.length === 0) {
+  console.log('\nNothing to backfill (no router-alias entries or session models left — run twice is a no-op).');
   release();
   process.exit(0);
 }
@@ -170,6 +191,9 @@ for (const c of changes.slice(0, 10)) {
   console.log(`  ${c.sessionId.slice(0, 8)}  ${c.at}  ${c.old}  ->  ${c.new}  (${c.slug})`);
 }
 if (changes.length > 10) console.log(`  ... and ${changes.length - 10} more`);
+for (const f of sessionFixes) {
+  console.log(`  [session]  ${f.sessionId.slice(0, 8)}  model  ${f.old}  ->  ${f.new}`);
+}
 
 if (!apply) {
   console.log('\nDry-run: nothing changed. Re-run with --apply to write the log and re-sync the DB.');
@@ -187,8 +211,13 @@ for (const c of changes) {
   const e = (sess.log || []).find(x => !x.event && x.at === c.at);
   if (e && ROUTER_ALIASES.has(e.model)) e.model = c.new;
 }
+for (const f of sessionFixes) {
+  if (data.sessions[f.sessionId] && ROUTER_ALIASES.has(data.sessions[f.sessionId].model)) {
+    data.sessions[f.sessionId].model = f.new;
+  }
+}
 writeFileSync(LOG_FILE, JSON.stringify(data, null, 2));
-console.log(`Log updated: ${changes.length} entries rewritten (${affectedSessions.size} sessions).`);
+console.log(`Log updated: ${changes.length} entries rewritten + ${sessionFixes.length} session models fixed (${affectedSessions.size} sessions).`);
 release();
 
 if (noPost) { console.log('Skipped DB sync (--no-post).'); process.exit(0); }
@@ -215,9 +244,19 @@ let mismatches = 0, checked = 0;
 for (const [id, sess] of Object.entries(sessions)) {
   const r = remote[id];
   if (!r) { console.error(`  session ${id.slice(0, 8)}: MISSING in DB`); mismatches++; continue; }
+  const rLog = (r.log || []).filter(x => !x.event);
+  if (rLog.length > (sess.log || []).length) {
+    // Upsert never deletes: the DB may legitimately hold entries that were
+    // removed from the local file (e.g. after a manual restore). Informational.
+    console.log(`  ${id.slice(0, 8)}: DB has ${rLog.length - (sess.log || []).length} extra entries not in the file (kept).`);
+  }
+  if (r.model !== sess.model) {
+    console.error(`  ${id.slice(0, 8)}: DB session model ${JSON.stringify(r.model)} != file ${JSON.stringify(sess.model)}`);
+    mismatches++;
+  }
   for (const e of sess.log || []) {
     if (e.event || e.at === undefined) continue;
-    const re = (r.log || []).find(x => !x.event && x.at === e.at);
+    const re = rLog.find(x => Date.parse(x.at) === Date.parse(e.at));
     checked++;
     if (!re || re.model !== e.model) {
       console.error(`  ${id.slice(0, 8)} ${e.at}: DB model ${re ? JSON.stringify(re.model) : 'absent'} != file ${JSON.stringify(e.model)}`);
@@ -226,4 +265,4 @@ for (const [id, sess] of Object.entries(sessions)) {
   }
 }
 if (mismatches > 0) { console.error(`RECONCILE FAILED: ${mismatches} mismatches of ${checked} entries checked.`); process.exit(1); }
-console.log(`Reconcile PASS: ${checked} entries match between log and DB (including all unaffected entries re-ingested).`);
+console.log(`Reconcile PASS: ${checked} entries match between log and DB (file entries ⊆ DB).`);
