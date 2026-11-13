@@ -68,11 +68,11 @@ The log is stored as `~/.claude/claude-usage-stats/claude-usage-stats-log.json` 
 | `cache_write_tokens` | Tokens written to prompt cache (more expensive) |
 | `output_tokens` | Output tokens generated |
 | `context_pct` | Context window fill % at the time of this exchange |
-| `model` | Commercial display name of the model that generated this response. Absent on old log entries and exchanges where `transcript_path` was not available. When absent, the report falls back to the session-level `model` field for pricing and display. |
+| `model` | Commercial display name of the model that generated this response (the requested model, or the routed model when a freshly scanned router slug differs). Absent on old log entries and exchanges where `transcript_path` was not available. When absent, the report falls back to the session-level `model` field for pricing and display. |
 
 **Note:** `cache_write_tokens` spikes after a cold start or `--resume` because the full prompt must be re-cached. Subsequent exchanges in the same session have high `cache_read_tokens` and low `cache_write_tokens`.
 
-**Note on `model` accuracy:** the script reads the JSONL transcript incrementally per hook call. If two exchanges complete between hook calls, both log entries will carry the model slug from the last `assistant` entry scanned, not necessarily their own. In practice this is rare and has no effect on token counts.
+**Note on `model` accuracy:** entries carry the payload's `display_name` — the model Claude Code *requested*. When the freshly scanned transcript slug denotes a different model than requested (router aliases like `openrouter/free`/`openrouter/auto`, where OpenRouter routes each request to a real model), the **routed** model's resolved name is recorded instead, so per-entry attribution reflects what actually answered. The routed slug is read from the transcript incrementally per hook call; if two exchanges complete between hook calls (background agents, parallel streams), only the last assistant entry's slug is scanned — rare, and the entry then falls back to the requested name.
 
 **Note on heuristic names:** when `models-cache.json` does not exist or does not contain an entry for the slug (e.g. on first install), the script generates a name heuristically by stripping the provider prefix and `:free`/`:beta`/`:nitro` suffixes and capitalizing words. Example: `anthropic/claude-sonnet-4-5` → `Claude Sonnet 4 5`. The cache (fetched automatically in background from `openrouter.ai/api/v1/models`, TTL 24h) corrects these names on subsequent calls.
 

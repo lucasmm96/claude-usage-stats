@@ -43,6 +43,7 @@ const sessionName    = d.session_name                           ?? null;
 const transcriptPath = d.transcript_path                        ?? null;
 const profile        = (profileArg && profileArg.trim())        ? profileArg.trim() : null;
 const model          = d.model?.display_name                    ?? 'Unknown';
+const payloadModelId = (d.model && typeof d.model.id === 'string') ? d.model.id : null;
 const used_pct       = d.context_window?.used_percentage        ?? 0;
 const total_in       = d.context_window?.total_input_tokens     ?? 0;
 const total_out      = d.context_window?.total_output_tokens    ?? 0;
@@ -160,6 +161,20 @@ function applyFreeSuffix(name, isFree) {
   return isFree ? cleaned + ' (Free)' : cleaned;
 }
 
+// True when the freshly-scanned transcript slug plausibly denotes the model the
+// payload requested. Exact equality when the payload carries model.id;
+// otherwise normalized containment ("Sonnet 4.6" vs "anthropic/claude-sonnet-4-6").
+// Direct models keep their payload display_name so entry names stay stable;
+// only router aliases (where requested != answered) get the routed model's name.
+function sameModel(slug, payloadName, payloadId) {
+  if (payloadId && typeof payloadId === 'string') return slug === payloadId;
+  if (!slug) return true;
+  const base = (slug.split('/')[1] || slug).replace(/:[^:]+$/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const name = String(payloadName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!base || !name) return false;
+  return name.includes(base) || base.includes(name);
+}
+
 let modelCacheMap = {};
 try {
   const raw = JSON.parse(fs.readFileSync(cacheFilePath, 'utf8'));
@@ -171,6 +186,13 @@ const baseName = real_model
   ? (modelCacheMap[real_model] || heuristicName(real_model))
   : model; // fallback: display_name from payload (e.g. "Sonnet 4.6"), left untouched
 const displayModel = real_model ? applyFreeSuffix(baseName, isFree) : baseName;
+
+// Entry model: the ROUTED model when a fresh transcript slug differs from what
+// was requested (router aliases like "openrouter/free"); otherwise the payload
+// display_name. Fallback keeps the old behavior when no fresh slug was scanned.
+const entryModel = (freshRealModel && real_model && !sameModel(real_model, model, payloadModelId))
+  ? displayModel
+  : (d.model && d.model.display_name ? d.model.display_name : null);
 
 // Payload session_name is live (reflects a rename immediately); scanned title is the fallback.
 const effectiveName = sessionName ?? custom_title;
@@ -191,7 +213,7 @@ if (is_compact) {
   if (!is_dup) {
     sess.log.push({
       at: nowIso, input_tokens, cache_read_tokens, cache_write_tokens, output_tokens, context_pct: used_pct,
-      ...((d.model && d.model.display_name) ? { model: d.model.display_name } : {}),
+      ...(entryModel ? { model: entryModel } : {}),
     });
     hadActivity = true;
   }
