@@ -50,7 +50,7 @@ async function fetchProviderJson(provider) {
 // ---- Model pricing lookup from bulk data ----
 // Exact key match, then normalized exact, then normalized containment
 // (e.g. "claude-sonnet-4-6" vs "claude-sonnet-4-6-20261101"); longest match wins.
-function lookupModelPricing(bulkData, modelName) {
+function lookupModelPricing(bulkData, modelName, freeHint) {
   if (!bulkData) return null;
   let entry = bulkData[modelName];
   if (!entry) {
@@ -67,7 +67,7 @@ function lookupModelPricing(bulkData, modelName) {
         // Note: tokens come from the RAW lowercase name (not normKey), because
         // normKey collapses separators and merges words ("nvidia nemotron" →
         // "nvidianemotron"), which breaks token matching.
-        const nameFree = /free/.test(nk);
+        const nameFree = /free/.test(nk) || !!freeHint;
         const nameTok = (String(modelName).toLowerCase().match(/[a-z]{3,}|\d{3,}/g) || [])
           .filter(t => t.length >= 3);
         let best = null, bestLen = 0;
@@ -105,6 +105,21 @@ function resolveSlug(slug) {
   let clean = slug.replace(/:free|:beta|:nitro$/, '');
   const parts = clean.split('/');
   return { provider: (parts[0] || '').toLowerCase(), modelName: parts.slice(1).join('/') || '' };
+}
+
+// ---- Free-model detection ----
+// "(Free)" display names, the "openrouter/free" auto-router, and ":free" slug
+// variants are price $0 by rule. The display name is authoritative: router
+// sessions pair entry names with stale session slugs (_state.real_model is the
+// last model seen, not the entry's), and Portkey configs can carry paid prices
+// under ":free" keys.
+function isFreeModel(commName, slug) {
+  const name = String(commName || '').toLowerCase();
+  return name === 'openrouter/free' ||
+         /\(free\)/.test(name) ||
+         /\(grátis\)/.test(name) ||
+         /\(gratis\)/.test(name) ||
+         (typeof slug === 'string' && /:free$/.test(slug));
 }
 
 // ---- Commercial name → provider hint ----
@@ -192,16 +207,34 @@ async function syncPrices(sessions) {
     for (const c of cands) {
       const bulk = await fetchProviderJson(c.provider);
       if (!bulk) continue;
-      const pricing = lookupModelPricing(bulk, c.modelKey);
+      const pricing = lookupModelPricing(bulk, c.modelKey, isFreeModel(t.commName, t.slug));
       if (pricing !== null) { found = pricing; usedCand = c; break; }
     }
 
     if (!found) {
-      // not found anywhere → mark autoFailed (existing entries), keep values
+      // Not found anywhere → mark autoFailed. Existing values are kept so a
+      // possible manual-story entry is never destroyed, but a free model must
+      // not stay frozen at a wrong paid price from an older pipeline run.
       const existing = data.prices[t.commName];
       if (existing) {
         existing.autoFailed = true;
         existing.lastAttemptAt = new Date().toISOString();
+        if (existing.source !== 'manual' && isFreeModel(t.commName, t.slug)) {
+          const nowISO = new Date().toISOString();
+          if (existing.input || existing.output || existing.cacheRead || existing.cacheWrite) {
+            existing.history = existing.history || [];
+            if (existing.history.length >= MAX_HISTORY) existing.history = existing.history.slice(-MAX_HISTORY + 1);
+            existing.history.push({
+              at: nowISO,
+              input: existing.input, cacheRead: existing.cacheRead, cacheWrite: existing.cacheWrite, output: existing.output,
+              source: existing.source || 'portkey'
+            });
+            existing.input = 0; existing.cacheRead = 0; existing.cacheWrite = 0; existing.output = 0;
+          }
+          // $0 is the correct price for a free model by rule, not a failure.
+          existing.autoFailed = false;
+          existing.syncAt = nowISO;
+        }
         changed = true;
       }
       _savePricingData(data);
@@ -209,11 +242,16 @@ async function syncPrices(sessions) {
     }
 
     const v = found.values;
-    const mtInput = centsToMtok(v.input) ?? 0;
-    const mtOutput = centsToMtok(v.output) ?? 0;
-    const mtCacheR = centsToMtok(v.cacheRead) ?? 0;
-    const mtCacheW = centsToMtok(v.cacheWrite) ?? 0;
+    let mtInput = centsToMtok(v.input) ?? 0;
+    let mtOutput = centsToMtok(v.output) ?? 0;
+    let mtCacheR = centsToMtok(v.cacheRead) ?? 0;
+    let mtCacheW = centsToMtok(v.cacheWrite) ?? 0;
+    // Free models cost $0 by rule, whatever the matched config says. Checked
+    // again here (on top of the lookup guard) because the fuzzy guard only sees
+    // the slug-derived key, while the "(Free)" mark lives on the display name.
     const matchedKey = found.key || usedCand.modelKey;
+    const modelFree = isFreeModel(t.commName, t.slug) || /:free$/.test(matchedKey || '');
+    if (modelFree) { mtInput = 0; mtOutput = 0; mtCacheR = 0; mtCacheW = 0; }
     const portkeyId = `${usedCand.provider}/${matchedKey}`;
     const nowISO = new Date().toISOString();
 

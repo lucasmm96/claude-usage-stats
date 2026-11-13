@@ -48,7 +48,14 @@ never overwritten by the sync.
   Matching within a provider file is fuzzy: exact key → normalized exact → substring
   containment (≥6 chars) or token containment (every ≥3-char word of the name appears in
   the key). Names containing "free" only match `:free` variants.
-- **Not found**: the model is flagged `autoFailed` and keeps its last values (if any).
+- **Free models are $0 by rule**: a model whose display name is `(Free)`, whose slug
+  ends in `:free`, or that is the `openrouter/free` router is always priced $0, whatever
+  the matched config says. The display name is authoritative because router sessions
+  pair entry names with stale `_state.real_model` slugs, and Portkey configs can carry
+  paid prices under `:free` keys (e.g. `deepseek-v4-flash` rates stored under a
+  mispaired free name).
+- **Not found**: the model is flagged `autoFailed` and keeps its last values (if any) —
+  except free models, which are zeroed instead of staying frozen at an old wrong price.
   Models never priced and absent from the API simply stay unpriced (`⚠` in the modal) —
   no phantom entries are created.
 
