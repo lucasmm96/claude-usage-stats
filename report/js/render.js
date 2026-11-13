@@ -43,6 +43,7 @@ function renderModelBar() {
     }
   }
   const models = [...modelSet].sort();
+  buildModelColors(models);
 
   const bar = document.getElementById('model-bar');
   if (!models.length) { bar.hidden = true; return; }

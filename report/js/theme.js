@@ -11,19 +11,34 @@ const TC = {
   get output()      { return cssVar('--tc-output'); },
 };
 
-// ---- Model colors (deterministic per name; a model keeps its color across ranges) ----
-const MODEL_COLORS = [
-  '#60a5fa', '#4ade80', '#fb923c', '#a78bfa', '#f472b6', '#facc15',
-  '#34d399', '#38bdf8', '#fb7185', '#a3e635', '#c084fc', '#f59e0b',
-];
+// ---- Model colors ----
+// Each model gets a unique color derived from the full set of models detected
+// in the data (built by buildModelColors), so colors never repeat and stay
+// stable regardless of the active date range. Golden-angle hue spacing keeps
+// adjacent models maximally distinguishable.
+let _modelColorMap = new Map();
+
+function buildModelColors(names) {
+  const set = new Set(names);
+  set.add('(unknown)');
+  const sorted = [...set].filter(Boolean).sort();
+  _modelColorMap = new Map(sorted.map((name, i) => [
+    name, `hsl(${Math.round((i * 137.508) % 360)}, 72%, 58%)`
+  ]));
+}
 
 function modelColor(name) {
+  return _modelColorMap.get(name) ||
+    `hsl(${Math.round((hashStr(name) * 137.508) % 360)}, 72%, 58%)`;
+}
+
+function hashStr(s) {
   let h = 2166136261;
-  for (let i = 0; i < name.length; i++) {
-    h ^= name.charCodeAt(i);
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
-  return MODEL_COLORS[(h >>> 0) % MODEL_COLORS.length];
+  return (h >>> 0) / 4294967295;
 }
 
 // ---- Chart.js plugin: compact event vertical lines ----
