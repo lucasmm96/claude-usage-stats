@@ -11,6 +11,21 @@ const TC = {
   get output()      { return cssVar('--tc-output'); },
 };
 
+// ---- Model colors (deterministic per name; a model keeps its color across ranges) ----
+const MODEL_COLORS = [
+  '#60a5fa', '#4ade80', '#fb923c', '#a78bfa', '#f472b6', '#facc15',
+  '#34d399', '#38bdf8', '#fb7185', '#a3e635', '#c084fc', '#f59e0b',
+];
+
+function modelColor(name) {
+  let h = 2166136261;
+  for (let i = 0; i < name.length; i++) {
+    h ^= name.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return MODEL_COLORS[(h >>> 0) % MODEL_COLORS.length];
+}
+
 // ---- Chart.js plugin: compact event vertical lines ----
 const compactPlugin = {
   id: 'compacts',

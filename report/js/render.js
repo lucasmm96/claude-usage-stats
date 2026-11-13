@@ -3,6 +3,7 @@ let activeSessId      = null;
 let activeSessLogLen  = 0;
 let activeSessLastAt  = '';
 let activePricingJson = null;
+let activeRangeSig    = '';
 
 function renderProfileBar() {
   const profiles = [...new Set(
@@ -167,7 +168,7 @@ function renderAll() {
           unpriced += (e.input_tokens || 0) + (e.cache_read_tokens || 0) +
                       (e.cache_write_tokens || 0) + (e.output_tokens || 0);
         } else {
-          const mp = entryModelPrice(e, s.model, pricing);
+          const mp = entryModelPrice(e, s.model, pricing, e.at);
           cost += (e.input_tokens       || 0) / 1e6 * mp.input;
           cost += (e.cache_read_tokens  || 0) / 1e6 * mp.cacheRead;
           cost += (e.cache_write_tokens || 0) / 1e6 * mp.cacheWrite;
@@ -189,6 +190,8 @@ function renderAll() {
   const prevId     = activeSessId;
   const prevLogLen = activeSessLogLen;
   const prevLastAt = activeSessLastAt;
+  const prevRangeSig = activeRangeSig;
+  activeRangeSig = String(activeRange) + '|' + currentDateFrom + '|' + currentDateTo;
   const detailEl   = document.getElementById('detail');
   const prevScroll = detailEl ? detailEl.scrollTop : 0;
 
@@ -235,6 +238,7 @@ function renderAll() {
     const dataChanged = !prevId ||
       sess.last_activity_at !== prevLastAt ||
       (sess.log || []).length !== prevLogLen ||
+      activeRangeSig !== prevRangeSig ||
       currentPricingJson !== activePricingJson;
     activePricingJson = currentPricingJson;
 

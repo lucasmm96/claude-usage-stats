@@ -44,6 +44,11 @@ function getFilteredSessions() {
       (s.log || []).some(e => !e.event && e.model && activeModels.has(e.model))
     );
   }
+  // When a date range is active, drop sessions with no activity in it so the
+  // whole page reflects the same slice (stats, list, detail, daily chart).
+  if (activeRange && activeRange !== 0 && activeRange !== '0') {
+    sessions = sessions.filter(s => (s.log || []).some(e => isInDateRange(e.at)));
+  }
   return sessions;
 }
 
@@ -123,7 +128,8 @@ function isInDateRange(isoDate) {
 }
 
 function sessStats(sess) {
-  const log = dedupe(sess.log || []);
+  // Apply the active date range so per-session figures match the page's slice.
+  const log = dedupe(sess.log || []).filter(e => isInDateRange(e.at));
   const exch = log.filter(e => !e.event);
   const compacts = log.filter(e => e.event === 'compact').length;
   const total = exch.reduce((s, e) => s + e.input_tokens + e.cache_read_tokens + e.cache_write_tokens + e.output_tokens, 0);

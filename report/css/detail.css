@@ -49,6 +49,7 @@
 }
 .legend { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--muted); }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
+.daily-legend[hidden] { display: none; }
 .chart-wrap { position: relative; height: 150px; }
 .log-section {
   animation: fade-in 150ms ease 120ms both;
