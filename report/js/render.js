@@ -103,7 +103,10 @@ function renderModelBar() {
         dot.style.background = modelColor(value);
         row.appendChild(dot);
       }
-      row.appendChild(document.createTextNode(label));
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'model-dropdown-label';
+      labelSpan.textContent = label;
+      row.appendChild(labelSpan);
       panel.appendChild(row);
     };
 
