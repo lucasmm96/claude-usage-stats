@@ -14,9 +14,9 @@
 //   models match the file exactly.
 //
 // Usage:
-//   node scripts/backfill-routed-models.mjs                 # dry-run: diff only
-//   node scripts/backfill-routed-models.mjs --apply         # backup + log + POST + reconcile
-//   node scripts/backfill-routed-models.mjs --apply --no-post
+//   node report/js/backfill-routed-models.mjs            # dry-run: diff only
+//   node report/js/backfill-routed-models.mjs --apply    # backup + log + POST + reconcile
+//   node report/js/backfill-routed-models.mjs --apply --no-post
 //
 // Env: API_URL (default https://claude-usage-stats.vercel.app), API_KEY.
 // Zero dependencies: node >= 18 (global fetch).
