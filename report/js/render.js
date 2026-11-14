@@ -5,6 +5,92 @@ let activeSessLastAt  = '';
 let activePricingJson = null;
 let activeRangeSig    = '';
 
+// Shared filter dropdown: a trigger button + a popover panel of selectable rows.
+// Items: [{ value, label, color? }]. In single mode value is the active scalar
+// (null = "All"); in multi mode it's the active Set and rows carry checkboxes.
+function buildFilterDropdown({ containerEl, items, active, isMulti, triggerText, onChange }) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'filter-dropdown';
+
+  const trigger = document.createElement('button');
+  trigger.className = 'profile-btn filter-dropdown-trigger';
+  trigger.type = 'button';
+
+  const panel = document.createElement('div');
+  panel.className = 'filter-dropdown-panel';
+
+  function isChecked(value) {
+    if (isMulti) return value === 'All' ? active.size === 0 : active.has(value);
+    return value === 'All' ? active == null : active === value;
+  }
+
+  function syncTrigger() {
+    trigger.textContent = triggerText();
+  }
+
+  function buildPanel() {
+    panel.innerHTML = '';
+    const makeRow = (item) => {
+      const row = document.createElement('label');
+      row.className = 'filter-dropdown-row';
+
+      const input = document.createElement('input');
+      input.type = isMulti ? 'checkbox' : 'radio';
+      if (!isMulti) input.name = 'filter-dropdown-' + containerEl.id;
+      input.checked = isChecked(item.value);
+
+      input.onchange = () => {
+        onChange(item.value, input.checked);
+        buildPanel();
+        syncTrigger();
+        renderAll();
+      };
+
+      row.appendChild(input);
+      if (item.color) {
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        dot.style.background = item.color;
+        row.appendChild(dot);
+      }
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'filter-dropdown-label';
+      labelSpan.textContent = item.label;
+      row.appendChild(labelSpan);
+      panel.appendChild(row);
+    };
+
+    makeRow({ value: 'All', label: 'All' });
+    items.forEach(makeRow);
+  }
+
+  trigger.onclick = () => {
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open', !isOpen);
+    trigger.classList.toggle('open', !isOpen);
+  };
+
+  // Close on outside click (registered once on document, checks containment)
+  if (!document.__filterDropdownListener) {
+    document.__filterDropdownListener = (e) => {
+      document.querySelectorAll('.filter-dropdown').forEach(w => {
+        if (!w.contains(e.target)) {
+          w.querySelector('.filter-dropdown-panel').classList.remove('open');
+          w.querySelector('.filter-dropdown-trigger').classList.remove('open');
+        }
+      });
+    };
+    document.addEventListener('click', document.__filterDropdownListener);
+  }
+
+  buildPanel();
+  syncTrigger();
+  wrapper.appendChild(trigger);
+  wrapper.appendChild(panel);
+  containerEl.innerHTML = '';
+  containerEl.appendChild(wrapper);
+}
+
 function renderProfileBar() {
   const profiles = [...new Set(
     Object.values(globalData.sessions).map(s => s.profile).filter(Boolean)
@@ -18,20 +104,17 @@ function renderProfileBar() {
   if (activeProfile === '__other__' && !hasOther) activeProfile = null;
 
   bar.hidden = false;
-  const pills = document.getElementById('profile-pills');
-  pills.innerHTML = '';
+  const items = profiles.map(p => ({ value: p, label: p }));
+  if (hasOther) items.push({ value: '__other__', label: 'other' });
 
-  const makeBtn = (label, value) => {
-    const b = document.createElement('button');
-    b.className = 'profile-btn' + (activeProfile === value ? ' active' : '');
-    b.textContent = label;
-    b.onclick = () => { activeProfile = value; renderAll(); };
-    pills.appendChild(b);
-  };
-
-  makeBtn('All', null);
-  profiles.forEach(p => makeBtn(p, p));
-  if (hasOther) makeBtn('other', '__other__');
+  buildFilterDropdown({
+    containerEl: document.getElementById('profile-pills'),
+    items,
+    active: activeProfile,
+    isMulti: false,
+    triggerText: () => (activeProfile == null ? 'All ▾' : (activeProfile === '__other__' ? 'other' : activeProfile) + ' ▾'),
+    onChange: (value) => { activeProfile = value === 'All' ? null : value; },
+  });
 }
 
 function renderModelBar() {
@@ -48,96 +131,27 @@ function renderModelBar() {
   const bar = document.getElementById('model-bar');
   if (!models.length) { bar.hidden = true; return; }
   bar.hidden = false;
-  const container = document.getElementById('model-pills');
-  container.innerHTML = '';
 
-  // Custom dropdown: a trigger button + a popover panel
-  const wrapper = document.createElement('div');
-  wrapper.className = 'model-dropdown';
-
-  const trigger = document.createElement('button');
-  trigger.className = 'profile-btn model-dropdown-trigger';
-  trigger.type = 'button';
-  updateTriggerLabel();
-
-  const panel = document.createElement('div');
-  panel.className = 'model-dropdown-panel';
-
-  function updateTriggerLabel() {
-    if (activeModels.size === 0) {
-      trigger.textContent = 'All ▾';
-    } else {
+  buildFilterDropdown({
+    containerEl: document.getElementById('model-pills'),
+    items: models.map(m => ({ value: m, label: m, color: modelColor(m) })),
+    active: activeModels,
+    isMulti: true,
+    triggerText: () => {
+      if (activeModels.size === 0) return 'All ▾';
       const names = [...activeModels];
-      trigger.textContent = names.length === 1 ? names[0] + ' ▾' : names.length + ' models ▾';
-    }
-  }
-
-  function buildPanel() {
-    panel.innerHTML = '';
-
-    const makeRow = (label, value) => {
-      const row = document.createElement('label');
-      row.className = 'model-dropdown-row';
-
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.checked = value === 'All' ? activeModels.size === 0 : activeModels.has(value);
-
-      cb.onchange = () => {
-        if (value === 'All') {
-          activeModels.clear();
-        } else {
-          if (cb.checked) activeModels.add(value);
-          else activeModels.delete(value);
-          if (activeModels.size === 0) activeModels.clear(); // fall back to All
-        }
-        buildPanel();
-        updateTriggerLabel();
-        renderAll();
-      };
-
-      row.appendChild(cb);
-      if (value !== 'All') {
-        const dot = document.createElement('span');
-        dot.className = 'dot';
-        dot.style.background = modelColor(value);
-        row.appendChild(dot);
+      return names.length === 1 ? names[0] + ' ▾' : names.length + ' models ▾';
+    },
+    onChange: (value, checked) => {
+      if (value === 'All') {
+        activeModels.clear();
+      } else {
+        if (checked) activeModels.add(value);
+        else activeModels.delete(value);
+        if (activeModels.size === 0) activeModels.clear(); // fall back to All
       }
-      const labelSpan = document.createElement('span');
-      labelSpan.className = 'model-dropdown-label';
-      labelSpan.textContent = label;
-      row.appendChild(labelSpan);
-      panel.appendChild(row);
-    };
-
-    makeRow('All', 'All');
-    models.forEach(m => makeRow(m, m));
-  }
-
-  buildPanel();
-
-  trigger.onclick = () => {
-    const isOpen = panel.classList.contains('open');
-    panel.classList.toggle('open', !isOpen);
-    trigger.classList.toggle('open', !isOpen);
-  };
-
-  // Close on outside click (registered once on document, checks containment)
-  if (!document.__modelDropdownListener) {
-    document.__modelDropdownListener = (e) => {
-      document.querySelectorAll('.model-dropdown').forEach(w => {
-        if (!w.contains(e.target)) {
-          w.querySelector('.model-dropdown-panel').classList.remove('open');
-          w.querySelector('.model-dropdown-trigger').classList.remove('open');
-        }
-      });
-    };
-    document.addEventListener('click', document.__modelDropdownListener);
-  }
-
-  wrapper.appendChild(trigger);
-  wrapper.appendChild(panel);
-  container.appendChild(wrapper);
+    },
+  });
 }
 
 function renderAll() {
