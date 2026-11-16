@@ -97,7 +97,7 @@ function makeDailyTooltipHandler(agg, dayTotals, dayCosts) {
     })).sort((a, b) => (b.tok - a.tok) || ((b.cost || 0) - (a.cost || 0)));
 
     let html = '<div class="tt-title">' + esc(fmtDay(day)) + '</div>';
-    html += '<div class="tt-total">Total: ' + fmtN(total) + ' tokens · ' + active + ' modelo' + (active === 1 ? '' : 's');
+    html += '<div class="tt-total">Total: ' + fmtN(total) + ' tokens · ' + active + ' model' + (active === 1 ? '' : 's');
     if (costTotal !== null) html += ' · ' + fmtCost(costTotal);
     html += '</div>';
     for (const r of rows) {
