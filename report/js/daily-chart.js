@@ -59,8 +59,72 @@ function computeDailyByModel(range, fromDate, toDate, pricingData) {
     days = days.filter(d => d >= cutoffStr);
   }
 
-  const models = Object.keys(tokens).sort();
+  const modelTotals = {};
+  for (const m of Object.keys(tokens)) {
+    modelTotals[m] = Object.values(tokens[m] || {}).reduce((s, v) => s + v, 0);
+  }
+  const models = Object.keys(tokens).sort((a, b) => {
+    const ta = modelTotals[a] || 0;
+    const tb = modelTotals[b] || 0;
+    if (tb !== ta) return tb - ta;                 // mais tokens primeiro
+    const ca = costs ? Object.values(costs[a] || {}).reduce((s, v) => s + v, 0) : 0;
+    const cb = costs ? Object.values(costs[b] || {}).reduce((s, v) => s + v, 0) : 0;
+    return cb - ca;                                // desempate por custo
+  });
   return { days, models, tokens, costs: hasPricing ? costs : null };
+}
+
+function makeDailyTooltipHandler(agg, dayTotals, dayCosts) {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return function(context) {
+    const el = document.getElementById('daily-tooltip');
+    if (!el) return;
+    const tt = context.tooltip;
+    if (!tt || tt.opacity === 0 || !tt.dataPoints || !tt.dataPoints.length) {
+      el.style.display = 'none';
+      return;
+    }
+    const i = tt.dataPoints[0].dataIndex;
+    const day = agg.days[i];
+    const active = agg.models.filter(m => (agg.tokens[m][day] || 0) > 0).length;
+    const total = dayTotals[i];
+    const costTotal = dayCosts ? dayCosts[i] : null;
+
+    const rows = agg.models.map(m => ({
+      m,
+      tok: agg.tokens[m][day] || 0,
+      cost: agg.costs ? (agg.costs[m][day] || 0) : undefined
+    })).sort((a, b) => (b.tok - a.tok) || ((b.cost || 0) - (a.cost || 0)));
+
+    let html = '<div class="tt-title">' + esc(fmtDay(day)) + '</div>';
+    html += '<div class="tt-total">Total: ' + fmtN(total) + ' tokens · ' + active + ' modelo' + (active === 1 ? '' : 's');
+    if (costTotal && costTotal > 0) html += ' · ' + fmtCost(costTotal);
+    html += '</div>';
+    for (const r of rows) {
+      const pctTok = total > 0 ? Math.round(r.tok / total * 100) : 0;
+      let line = '<span class="tt-swatch" style="background:' + modelColor(r.m) + '"></span>' + esc(r.m) + ': ' + fmtN(r.tok) + ' tokens';
+      if (r.cost !== undefined && r.cost > 0) line += ' · ' + fmtCost(r.cost);
+      if (costTotal && costTotal > 0) {
+        const pctCost = r.cost > 0 ? Math.round(r.cost / costTotal * 100) : 0;
+        line += ' (' + pctTok + '% tok · ' + pctCost + '% cost)';
+      } else {
+        line += ' (' + pctTok + '% tok)';
+      }
+      html += '<div class="tt-row">' + line + '</div>';
+    }
+    el.innerHTML = html;
+    el.style.display = 'block';
+    const wrap = el.parentElement;
+    const x = tt.caretX, y = tt.caretY;
+    const tw = el.offsetWidth, th = el.offsetHeight;
+    let left = x + 14;
+    let top = y - th - 10;
+    if (left + tw > wrap.clientWidth) left = x - tw - 14;
+    if (left < 0) left = 0;
+    if (top < 0) top = y + 14;
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+  };
 }
 
 function renderDailyChart(range, fromDate, toDate) {
@@ -119,35 +183,9 @@ function renderDailyChart(range, fromDate, toDate) {
         tooltip: {
           mode: 'index',
           intersect: false,
-          callbacks: {
-            title: items => {
-              if (!items.length) return [];
-              const i = items[0].dataIndex;
-              const line = 'Total: ' + fmtN(dayTotals[i]) + ' tokens';
-              return dayCosts && dayCosts[i] > 0
-                ? [fmtDay(agg.days[i]), line + ' · ' + fmtCost(dayCosts[i])]
-                : [fmtDay(agg.days[i]), line];
-            },
-            label: item => {
-              const day = agg.days[item.dataIndex];
-              const model = item.dataset.label;
-              const tok = item.raw;
-              if (!tok) return null;
-              let line = model + ': ' + fmtN(tok) + ' tokens';
-              const cost = agg.costs ? (agg.costs[model][day] || 0) : undefined;
-              if (cost !== undefined && cost > 0) line += ' · ' + fmtCost(cost);
-              const pctTok = dayTotals[item.dataIndex] > 0
-                ? Math.round(tok / dayTotals[item.dataIndex] * 100) : 0;
-              if (dayCosts && dayCosts[item.dataIndex] > 0) {
-                const pctCost = cost > 0 ? Math.round(cost / dayCosts[item.dataIndex] * 100) : 0;
-                line += ' (' + pctTok + '% tok · ' + pctCost + '% cost)';
-              } else {
-                line += ' (' + pctTok + '% tok)';
-              }
-              return line;
-            }
-          }
-        }
+          enabled: false,
+          external: makeDailyTooltipHandler(agg, dayTotals, dayCosts),
+        },
       },
       scales: {
         x: { stacked: true, ticks: { color: tickColor, font: { size: 10 }, maxTicksLimit: 20 }, grid: { color: gridColor } },

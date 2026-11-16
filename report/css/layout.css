@@ -278,8 +278,38 @@ h1 { font-size: var(--text-lg); font-weight: 600; letter-spacing: var(--tracking
 }
 .custom-dates input[type="date"]:focus { outline: none; border-color: var(--accent); }
 .date-sep { color: var(--muted); font-size: var(--text-xs); }
-.daily-chart-wrap { position: relative; height: 140px; overflow: hidden; }
+.daily-chart-wrap { position: relative; height: 140px; overflow: visible; }
 #c-daily { display: block; width: 100%; height: 100%; }
+#daily-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 20;
+  pointer-events: none;
+  background: rgba(18, 18, 20, 0.96);
+  color: #f0f0f0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-md, 6px);
+  padding: 7px 10px;
+  font-size: var(--text-xs, 11px);
+  line-height: 1.55;
+  white-space: nowrap;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+}
+#daily-tooltip .tt-title { font-weight: 600; }
+#daily-tooltip .tt-total {
+  font-weight: 600;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+#daily-tooltip .tt-row { display: flex; align-items: center; gap: 6px; }
+#daily-tooltip .tt-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  display: inline-block;
+}
 .daily-empty {
   position: absolute;
   inset: 0;
@@ -291,7 +321,7 @@ h1 { font-size: var(--text-lg); font-weight: 600; letter-spacing: var(--tracking
 }
 
 /* --- Layout --- */
-#main { display: flex; flex: 1; overflow: hidden; }
+#main { display: flex; flex: 1; overflow: visible; }
 #sessions { width: 220px; flex-shrink: 0; border-right: 1px solid var(--border); overflow-y: auto; }
 
 /* --- Session list --- */
