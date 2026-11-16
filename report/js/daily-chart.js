@@ -98,14 +98,14 @@ function makeDailyTooltipHandler(agg, dayTotals, dayCosts) {
 
     let html = '<div class="tt-title">' + esc(fmtDay(day)) + '</div>';
     html += '<div class="tt-total">Total: ' + fmtN(total) + ' tokens · ' + active + ' modelo' + (active === 1 ? '' : 's');
-    if (costTotal && costTotal > 0) html += ' · ' + fmtCost(costTotal);
+    if (costTotal !== null) html += ' · ' + fmtCost(costTotal);
     html += '</div>';
     for (const r of rows) {
       const pctTok = total > 0 ? Math.round(r.tok / total * 100) : 0;
       let line = '<span class="tt-swatch" style="background:' + modelColor(r.m) + '"></span>' + esc(r.m) + ': ' + fmtN(r.tok) + ' tokens';
-      if (r.cost !== undefined && r.cost > 0) line += ' · ' + fmtCost(r.cost);
-      if (costTotal && costTotal > 0) {
-        const pctCost = r.cost > 0 ? Math.round(r.cost / costTotal * 100) : 0;
+      if (r.cost !== undefined) line += ' · ' + fmtCost(r.cost);
+      if (costTotal !== null) {
+        const pctCost = costTotal > 0 ? Math.round(r.cost / costTotal * 100) : 0;
         line += ' (' + pctTok + '% tok · ' + pctCost + '% cost)';
       } else {
         line += ' (' + pctTok + '% tok)';
