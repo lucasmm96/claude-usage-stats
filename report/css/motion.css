@@ -1,17 +1,64 @@
-/* --- Accessibility: motion & transparency --- */
+/* --- Accessibility: motion, transparency, contrast --- */
+
+/* Reduced motion: cross-fades instead of slides/scales, no overshoot. */
 @media (prefers-reduced-motion: reduce) {
-  .btn { transition: border-color 80ms, background 80ms, opacity 80ms; }
-  .btn:active { transform: none; }
-  .range-btn { transition: border-color 80ms, background 80ms, color 80ms; }
-  .range-btn:active { transform: none; }
-  .profile-btn { transition: border-color 80ms, background 80ms, color 80ms; }
-  .profile-btn:active { transform: none; }
+  .btn, .range-btn, .profile-btn, .modal-tab, .btn-remove, .modal-close,
+  .sess-item, .filter-dropdown-row, table.log td {
+    transition-duration: 80ms;
+  }
+  .btn:active, .range-btn:active, .profile-btn:active,
   .btn-remove:active, .modal-close:active { transform: none; }
-  .sess-item { transition: background 80ms; }
-  .modal-overlay { transition: opacity 100ms ease; }
+
+  .filter-dropdown-panel {
+    transform: none;
+    transition: opacity 80ms ease, visibility 0s linear 80ms;
+  }
+  .filter-dropdown-panel.open {
+    transform: none;
+    transition: opacity 80ms ease, visibility 0s;
+  }
+
+  .modal-overlay { transition: opacity 100ms ease, visibility 0s linear 100ms; }
+  .modal-overlay.open { transition: opacity 100ms ease, visibility 0s; }
   .modal { transition: opacity 100ms ease; transform: none !important; }
+  .modal-overlay.open .modal { transition: opacity 100ms ease; transform: none; }
   .detail-header, .detail-stats, .chart-section, .log-section { animation: none; }
 }
+
+/* Reduced transparency: translucent chrome becomes solid. */
 @media (prefers-reduced-transparency: reduce) {
-  #url-in:focus, .field input:focus { box-shadow: none; }
+  .detail-header {
+    background: var(--bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .modal-overlay {
+    background: var(--scrim-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  #daily-tooltip {
+    background: #121214;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* More contrast: stronger borders, solid surfaces, full-strength labels. */
+@media (prefers-contrast: more) {
+  :root {
+    --border: var(--border-strong);
+    --muted: var(--text);
+  }
+  .detail-header {
+    background: var(--bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .modal-overlay { background: var(--scrim-solid); }
+  .btn, .profile-btn, .range-btn, .filter-dropdown-panel,
+  .field input, #url-in, #p-model-select, .price-item {
+    border-color: var(--border-strong);
+  }
+  .sess-item.active { border-left-width: 3px; }
 }

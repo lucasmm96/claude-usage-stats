@@ -16,7 +16,9 @@ table.log td {
   padding: 4px var(--space-2);
   border-bottom: 1px solid var(--border);
   font-variant-numeric: tabular-nums;
+  transition: background-color 100ms var(--ease-out);
 }
+table.log tbody tr:hover td { background: color-mix(in srgb, var(--surface2) 55%, transparent); }
 table.log td:first-child, table.log td:nth-child(2) { text-align: left; font-variant-numeric: normal; }
 table.log tr:last-child td { border-bottom: none; }
 .compact-row td { color: var(--orange); font-style: italic; }

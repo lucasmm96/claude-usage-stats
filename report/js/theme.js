@@ -57,3 +57,8 @@ const compactPlugin = {
   }
 };
 Chart.register(compactPlugin);
+
+// Charts inherit the report's type and palette instead of Chart.js defaults.
+Chart.defaults.font.family = cssVar('--font-sans');
+Chart.defaults.font.size = 11;
+Chart.defaults.color = cssVar('--muted');

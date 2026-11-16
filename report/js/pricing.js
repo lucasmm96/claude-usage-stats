@@ -131,8 +131,10 @@ function fmtCost(usd) {
 }
 
 // ---- Pricing modal (multi-model) ----
+let _pricingModalTrigger = null;
 function openPricingModal() {
   if (!globalData) return;
+  _pricingModalTrigger = document.activeElement;
   const allModels = extractModelsFromLog(globalData.sessions);
   const grouped = groupModelsByFamily(allModels);
   const data = getPricingData();
@@ -147,7 +149,7 @@ function openPricingModal() {
       const opt = document.createElement('option');
       opt.value = m;
       const hasPrice = data.prices[m] !== undefined;
-      opt.textContent = hasPrice ? `${m} — $${data.prices[m].input}/MTok` : `⚠ ${m}`;
+      opt.textContent = hasPrice ? `${m} — $${data.prices[m].input}/MTok` : `⚠︎ ${m}`;
       optg.appendChild(opt);
     }
     select.appendChild(optg);
@@ -239,7 +241,7 @@ function updateUnpricedBadge() {
     if (hasPrice) {
       opt.textContent = `${opt.value} — $${data.prices[opt.value].input}/MTok`;
     } else {
-      opt.textContent = `⚠ ${opt.value}`;
+      opt.textContent = `⚠︎ ${opt.value}`;
       unpricedCount++;
     }
   }
@@ -268,7 +270,7 @@ function rebuildConfiguredList(data) {
     const src = price.source || 'legacy';
     // Inline source icon, same style as the model dropdown (e.g. "⚠ Model")
     const isManual = src === 'manual' || src === 'legacy';
-    const srcIcon = isManual ? '✎' : (price.autoFailed ? '⚠' : '✓');
+    const srcIcon = isManual ? '✎' : (price.autoFailed ? '⚠︎' : '✓');
     const srcCls = isManual ? 'src-manual' : (price.autoFailed ? 'src-fail' : 'src-auto');
     const srcTitle = src === 'manual' ? 'Manual price'
       : price.autoFailed ? 'Auto-population failed (not found on Portkey)'
@@ -303,6 +305,8 @@ function removeModel(modelName) {
 
 function closePricingModal() {
   document.getElementById('pricing-modal-overlay').classList.remove('open');
+  if (_pricingModalTrigger && document.contains(_pricingModalTrigger)) _pricingModalTrigger.focus();
+  _pricingModalTrigger = null;
 }
 
 function switchPricingTab(name) {
@@ -319,10 +323,10 @@ function updatePricingButton() {
   const btn = document.getElementById('pricing-btn');
   if (!btn) return;
   if (getPricing()) {
-    btn.textContent = '🪙 Pricing ✓';
+    btn.innerHTML = ICONS.pricing + 'Pricing' + ICONS.check;
     btn.classList.add('btn-connected');
   } else {
-    btn.textContent = 'Pricing';
+    btn.innerHTML = ICONS.pricing + 'Pricing';
     btn.classList.remove('btn-connected');
   }
 }
@@ -406,21 +410,11 @@ if (typeof document !== 'undefined') {
   });
 }
 
-// Overlay click + focus trap (only in browser)
+// Overlay click dismissal (only in browser). Focus trapping for every modal is
+// wired once in main.js.
 if (typeof document !== 'undefined') {
   updatePricingButton();
   document.getElementById('pricing-modal-overlay').addEventListener('click', e => {
     if (e.target === document.getElementById('pricing-modal-overlay')) closePricingModal();
-  });
-  document.getElementById('pricing-modal-overlay').addEventListener('keydown', e => {
-    if (!document.getElementById('pricing-modal-overlay').classList.contains('open')) return;
-    if (e.key !== 'Tab') return;
-    const focusable = Array.from(
-      document.querySelector('#pricing-modal-overlay .modal').querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled])')
-    );
-    if (!focusable.length) return;
-    const first = focusable[0], last = focusable[focusable.length - 1];
-    if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
-    else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
   });
 }

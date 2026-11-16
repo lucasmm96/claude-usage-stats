@@ -18,8 +18,8 @@ function buildCharts(log) {
   const grid = dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
   const tick = cssVar('--muted');
   const baseScales = {
-    x: { ticks: { color: tick, font: { size: 10 }, maxTicksLimit: 15 }, grid: { color: grid } },
-    y: { ticks: { color: tick, font: { size: 10 } }, grid: { color: grid } }
+    x: { ticks: { color: tick, font: { size: 11 }, maxTicksLimit: 15 }, grid: { color: grid } },
+    y: { ticks: { color: tick, font: { size: 11 } }, grid: { color: grid } }
   };
 
   tokChart = new Chart(document.getElementById('c-tok'), {
@@ -45,7 +45,7 @@ function buildCharts(log) {
     type: 'line',
     data: { labels, datasets: [{
       label: 'Context %', data: ctxArr,
-      borderColor: TC.input, backgroundColor: 'rgba(96,165,250,0.1)',
+      borderColor: TC.input, backgroundColor: TC.input + '1f',
       borderWidth: 2, pointRadius: 3, fill: true, tension: 0.3,
     }]},
     options: {

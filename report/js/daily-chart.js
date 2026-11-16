@@ -158,7 +158,6 @@ function renderDailyChart(range, fromDate, toDate) {
   const gridColor = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
   const tickColor = cssVar('--muted');
   const borderColor = dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)';
-
   dailyChart = new Chart(canvasEl, {
     type: 'bar',
     data: {
@@ -171,13 +170,14 @@ function renderDailyChart(range, fromDate, toDate) {
         borderWidth: 1,
         borderRadius: 2,
         borderSkipped: false,
+        maxBarThickness: 40,
         stack: 's',
       }))
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 180 },
+      animation: prefersReducedMotion() ? false : { duration: 180 },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -188,8 +188,8 @@ function renderDailyChart(range, fromDate, toDate) {
         },
       },
       scales: {
-        x: { stacked: true, ticks: { color: tickColor, font: { size: 10 }, maxTicksLimit: 20 }, grid: { color: gridColor } },
-        y: { stacked: true, ticks: { color: tickColor, font: { size: 10 }, callback: v => fmtN(v) }, grid: { color: gridColor }, beginAtZero: true }
+        x: { stacked: true, ticks: { color: tickColor, font: { size: 11 }, maxTicksLimit: 20 }, grid: { color: gridColor } },
+        y: { stacked: true, ticks: { color: tickColor, font: { size: 11 }, callback: v => fmtN(v) }, grid: { color: gridColor }, beginAtZero: true }
       }
     }
   });

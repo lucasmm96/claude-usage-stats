@@ -16,15 +16,22 @@
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+/* Session identity stays anchored while the detail pane scrolls under it. */
 .detail-header {
-  animation: fade-in 150ms ease;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  animation: fade-in 150ms var(--ease-out);
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
+  background: rgba(var(--bg-rgb), 0.85);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
 }
 .detail-header h2 { font-size: var(--text-lg); font-weight: 600; letter-spacing: var(--tracking-tight); }
 .detail-header p { font-size: var(--text-sm); color: var(--muted); margin-top: 3px; }
 .detail-stats {
-  animation: fade-in 150ms ease 40ms both;
+  animation: fade-in 150ms var(--ease-out) 40ms both;
   display: flex;
   gap: var(--space-6);
   flex-wrap: wrap;
@@ -35,7 +42,7 @@
 .ds-label { font-size: var(--text-xs); color: var(--muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-weight: 500; }
 .ds-val { font-size: var(--text-md); font-weight: 600; margin-top: 1px; font-variant-numeric: tabular-nums; }
 .chart-section {
-  animation: fade-in 150ms ease 80ms both;
+  animation: fade-in 150ms var(--ease-out) 80ms both;
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
 }
@@ -51,7 +58,7 @@
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
 .chart-wrap { position: relative; height: 150px; }
 .log-section {
-  animation: fade-in 150ms ease 120ms both;
+  animation: fade-in 150ms var(--ease-out) 120ms both;
   padding: var(--space-3) var(--space-4) var(--space-6);
 }
 .log-section h3 {

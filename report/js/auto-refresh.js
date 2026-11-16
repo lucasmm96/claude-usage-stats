@@ -101,8 +101,8 @@ async function _arFetch() {
     });
     if (res.status === 304) return { notModified: true };
     if (res.status === 401) throw new Error('Invalid API key (401)');
-    if (res.status === 403) throw new Error('Sem permissão (403)');
-    if (res.status === 404) throw new Error('Endpoint não encontrado (404)');
+    if (res.status === 403) throw new Error('No permission (403)');
+    if (res.status === 404) throw new Error('Endpoint not found (404)');
     if (!res.ok) throw new Error('API error ' + res.status);
     return { text: await res.text(), etag: res.headers.get('ETag') };
   }
@@ -121,9 +121,9 @@ async function _arFetch() {
   const rem = res.headers.get('X-RateLimit-Remaining');
   if (rem !== null) console.debug('[auto-refresh] GitHub rate limit remaining:', rem);
   if (res.status === 304) return { notModified: true };
-  if (res.status === 401) throw new Error('Token inválido (401)');
-  if (res.status === 403) throw new Error('Sem permissão (403)');
-  if (res.status === 404) throw new Error('Não encontrado (404)');
+  if (res.status === 401) throw new Error('Invalid token (401)');
+  if (res.status === 403) throw new Error('No permission (403)');
+  if (res.status === 404) throw new Error('Not found (404)');
   if (!res.ok) throw new Error('GitHub API ' + res.status);
   return { text: await res.text(), etag: res.headers.get('ETag') };
 }
@@ -170,7 +170,7 @@ function setIndicator(state) {
   if (!txt) return;
   const t = new Date().toLocaleTimeString(undefined,
     { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  if (state === 'loading') txt.textContent = 'Atualizando…';
-  else if (state === 'error') txt.textContent = 'Falha ' + t;
-  else if (state === 'idle')  txt.textContent = 'Atualizado \xe0s ' + t;
+  if (state === 'loading') txt.textContent = 'Refreshing…';
+  else if (state === 'error') txt.textContent = 'Failed ' + t;
+  else if (state === 'idle')  txt.textContent = 'Updated at ' + t;
 }

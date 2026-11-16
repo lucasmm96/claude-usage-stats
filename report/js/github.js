@@ -35,6 +35,7 @@ async function tryAutoLoad() {
 }
 
 // ---- Modal ----
+let _ghModalTrigger = null;
 function openModal() {
   let pat = '', repo = '', file = '';
   try {
@@ -42,6 +43,7 @@ function openModal() {
     repo = localStorage.getItem(LS_REPO) || '';
     file = localStorage.getItem(LS_FILE) || '';
   } catch(e) {}
+  _ghModalTrigger = document.activeElement;
   document.getElementById('m-pat').value  = pat;
   document.getElementById('m-repo').value = repo;
   document.getElementById('m-file').value = file;
@@ -54,6 +56,9 @@ function openModal() {
 
 function closeModal() {
   document.getElementById('modal-overlay').classList.remove('open');
+  // Return focus to whatever opened the dialog.
+  if (_ghModalTrigger && document.contains(_ghModalTrigger)) _ghModalTrigger.focus();
+  _ghModalTrigger = null;
 }
 
 function togglePat() {
@@ -122,10 +127,10 @@ function setModalStatus(type, msg) {
 function updateGhButton(connected) {
   const btn = document.getElementById('gh-btn');
   if (connected) {
-    btn.textContent = '🔒 Private repo ✓';
+    btn.innerHTML = ICONS.lock + 'Private repo' + ICONS.check;
     btn.classList.add('btn-connected');
   } else {
-    btn.textContent = 'Private repo';
+    btn.innerHTML = ICONS.lock + 'Private repo';
     btn.classList.remove('btn-connected');
   }
 }

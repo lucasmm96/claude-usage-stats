@@ -15,6 +15,8 @@ function buildFilterDropdown({ containerEl, items, active, isMulti, triggerText,
   const trigger = document.createElement('button');
   trigger.className = 'profile-btn filter-dropdown-trigger';
   trigger.type = 'button';
+  trigger.setAttribute('aria-haspopup', 'true');
+  trigger.setAttribute('aria-expanded', 'false');
 
   const panel = document.createElement('div');
   panel.className = 'filter-dropdown-panel';
@@ -68,6 +70,7 @@ function buildFilterDropdown({ containerEl, items, active, isMulti, triggerText,
     const isOpen = panel.classList.contains('open');
     panel.classList.toggle('open', !isOpen);
     trigger.classList.toggle('open', !isOpen);
+    trigger.setAttribute('aria-expanded', String(!isOpen));
   };
 
   // Close on outside click (registered once on document, checks containment)
@@ -76,11 +79,26 @@ function buildFilterDropdown({ containerEl, items, active, isMulti, triggerText,
       document.querySelectorAll('.filter-dropdown').forEach(w => {
         if (!w.contains(e.target)) {
           w.querySelector('.filter-dropdown-panel').classList.remove('open');
-          w.querySelector('.filter-dropdown-trigger').classList.remove('open');
+          const t = w.querySelector('.filter-dropdown-trigger');
+          t.classList.remove('open');
+          t.setAttribute('aria-expanded', 'false');
         }
       });
     };
     document.addEventListener('click', document.__filterDropdownListener);
+  }
+
+  // Escape closes the panel and returns focus to its trigger.
+  if (!document.__filterDropdownKeyListener) {
+    document.__filterDropdownKeyListener = (e) => {
+      if (e.key !== 'Escape') return;
+      document.querySelectorAll('.filter-dropdown-panel.open').forEach(p => {
+        p.classList.remove('open');
+        const t = p.closest('.filter-dropdown')?.querySelector('.filter-dropdown-trigger');
+        if (t) { t.classList.remove('open'); t.setAttribute('aria-expanded', 'false'); t.focus(); }
+      });
+    };
+    document.addEventListener('keydown', document.__filterDropdownKeyListener);
   }
 
   buildPanel();
@@ -201,7 +219,7 @@ function renderAll() {
       }
     }
     let costText = fmtCost(cost);
-    if (unpriced > 0) costText += ` <span class="cost-warning">⚠ ${fmtN(unpriced)} unpriced</span>`;
+    if (unpriced > 0) costText += ` <span class="cost-warning">⚠︎ ${fmtN(unpriced)} unpriced</span>`;
     document.getElementById('s-cost').innerHTML = costText;
     costStat.style.display = '';
     statBar.classList.add('has-cost');
@@ -227,22 +245,33 @@ function renderAll() {
     const st = sessStats(sess);
     const el = document.createElement('div');
     el.className = 'sess-item';
+    el.tabIndex = 0;
+    el.setAttribute('role', 'button');
     el.innerHTML = `
       <div class="sess-name" title="${sess.session_name || sess.session_id}">${sess.session_name || sess.session_id.slice(0, 8)}</div>
       <div class="sess-meta">${sess.model}</div>
       <div class="sess-meta">${fmtN(st.total)} &middot; ${fmtDt(sess.started_at)}</div>
     `;
-    el.onclick = () => {
-      document.querySelectorAll('.sess-item').forEach(x => x.classList.remove('active'));
+    const select = () => {
+      document.querySelectorAll('.sess-item').forEach(x => {
+        x.classList.remove('active');
+        x.removeAttribute('aria-current');
+      });
       el.classList.add('active');
+      el.setAttribute('aria-current', 'true');
       activeSessId = sess.session_id;
       renderDetail(sess);
     };
+    el.onclick = select;
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); }
+    });
     list.appendChild(el);
 
     // Restore or default active item
     if (prevId ? sess.session_id === prevId : i === 0) {
       el.classList.add('active');
+      el.setAttribute('aria-current', 'true');
       activeItem = { el, sess };
     }
   });
@@ -250,7 +279,11 @@ function renderAll() {
   // Fallback: first session if prev selection not found
   if (!activeItem && sessions.length) {
     const firstEl = list.querySelector('.sess-item');
-    if (firstEl) { firstEl.classList.add('active'); activeItem = { el: firstEl, sess: sessions[0] }; }
+    if (firstEl) {
+      firstEl.classList.add('active');
+      firstEl.setAttribute('aria-current', 'true');
+      activeItem = { el: firstEl, sess: sessions[0] };
+    }
   }
 
   if (activeItem) {

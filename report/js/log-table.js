@@ -16,7 +16,7 @@ function buildLogTable(log, pricing, sessModel) {
 
   for (const e of sorted) {
     if (e.event === 'compact') {
-      rows += `<tr class="compact-row"><td colspan="${cols}">⚡ Compact — context reset to ${e.context_pct}%</td></tr>`;
+      rows += `<tr class="compact-row"><td colspan="${cols}">↺ Compact — context reset to ${e.context_pct}%</td></tr>`;
     } else {
       const t = e.input_tokens + e.cache_read_tokens + e.cache_write_tokens + e.output_tokens;
 

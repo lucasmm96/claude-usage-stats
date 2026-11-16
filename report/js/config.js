@@ -16,3 +16,17 @@ let activeProfile = null;
 let activeModels = new Set(); // empty = All models shown
 let tokChart = null;
 let ctxChart = null;
+
+// ---- Inline icon set ----
+// Monochrome SVGs that inherit currentColor, so buttons keep one visual voice
+// across platforms (emoji render differently on every OS).
+const ICONS = {
+  lock: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.25" y="7" width="9.5" height="6.5" rx="1.75"/><path d="M5.75 7V5.1a2.25 2.25 0 0 1 4.5 0V7"/></svg>',
+  database: '<svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="3.75" rx="4.75" ry="1.9"/><path d="M3.25 3.75v8.5c0 1.05 2.13 1.9 4.75 1.9s4.75-.85 4.75-1.9v-8.5"/><path d="M3.25 8c0 1.05 2.13 1.9 4.75 1.9S12.75 9.05 12.75 8"/></svg>',
+  pricing: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11"/><path d="M10.9 5.2H7.1a1.9 1.9 0 0 0 0 3.8h1.8a1.9 1.9 0 0 1 0 3.8H5.1"/></svg>',
+  check: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.6l2.9 2.9 6.1-6.6"/></svg>',
+};
+
+function prefersReducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}

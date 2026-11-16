@@ -32,12 +32,14 @@ async function tryAutoLoadApi() {
 }
 
 // ---- Modal ----
+let _apiModalTrigger = null;
 function openApiModal() {
   let apiUrl = '', apiKey = '';
   try {
     apiUrl = localStorage.getItem(LS_API_URL) || '';
     apiKey = localStorage.getItem(LS_API_KEY) || '';
   } catch(e) {}
+  _apiModalTrigger = document.activeElement;
   document.getElementById('a-url').value = apiUrl;
   document.getElementById('a-key').value = apiKey;
   document.getElementById('api-modal-status').textContent = '';
@@ -50,6 +52,8 @@ function openApiModal() {
 
 function closeApiModal() {
   document.getElementById('api-modal-overlay').classList.remove('open');
+  if (_apiModalTrigger && document.contains(_apiModalTrigger)) _apiModalTrigger.focus();
+  _apiModalTrigger = null;
 }
 
 function toggleApiKey() {
@@ -205,10 +209,10 @@ function updateApiButton(connected) {
   const btn = document.getElementById('api-btn');
   if (!btn) return;
   if (connected) {
-    btn.textContent = '📄 Database ✓';
+    btn.innerHTML = ICONS.database + 'Database' + ICONS.check;
     btn.classList.add('btn-connected');
   } else {
-    btn.textContent = '📄 Database';
+    btn.innerHTML = ICONS.database + 'Database';
     btn.classList.remove('btn-connected');
   }
 }

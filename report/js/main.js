@@ -1,4 +1,8 @@
 // ---- File loader ----
+// Paint button labels with their icons before any auto-load runs.
+updateGhButton(false);
+updateApiButton(false);
+
 document.getElementById('file-btn').onclick = () => document.getElementById('file-in').click();
 document.getElementById('file-in').addEventListener('change', e => {
   const f = e.target.files[0];
@@ -33,15 +37,22 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeModal(); closePricingModal(); closeApiModal(); }
 });
 
-// Focus trap inside modal
-document.getElementById('modal-overlay').addEventListener('keydown', e => {
-  if (!document.getElementById('modal-overlay').classList.contains('open')) return;
-  if (e.key !== 'Tab') return;
-  const focusable = Array.from(
-    document.querySelector('.modal').querySelectorAll('button:not([disabled]), input:not([disabled])')
-  );
-  if (!focusable.length) return;
-  const first = focusable[0], last = focusable[focusable.length - 1];
-  if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
-  else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+// Focus trap inside every dialog: Tab cycles within the open modal only.
+function attachFocusTrap(overlay) {
+  overlay.addEventListener('keydown', e => {
+    if (e.key !== 'Tab' || !overlay.classList.contains('open')) return;
+    const modal = overlay.querySelector('.modal');
+    if (!modal) return;
+    const focusable = Array.from(modal.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]'
+    )).filter(el => el.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
+    else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+  });
+}
+['modal-overlay', 'api-modal-overlay', 'pricing-modal-overlay'].forEach(id => {
+  const overlay = document.getElementById(id);
+  if (overlay) attachFocusTrap(overlay);
 });

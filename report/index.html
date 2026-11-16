@@ -18,7 +18,7 @@
 
 <header>
   <div class="header-brand">
-    <img src="assets/logo.svg" alt="Claude Usage Stats" class="header-icon" width="48" height="48">
+    <img src="assets/logo.svg" alt="Claude Usage Stats" class="header-icon" width="40" height="40">
     <h1>Claude Usage Stats</h1>
   </div>
   <div class="load-area">
@@ -26,9 +26,9 @@
     <button class="btn" id="file-btn">Load file</button>
     <input type="text" id="url-in" placeholder="Raw JSON URL…">
     <button class="btn btn-primary" id="url-btn">Load URL</button>
-    <button class="btn" id="gh-btn" onclick="openModal()">&#128274; Private repo</button>
-    <button class="btn" id="api-btn" onclick="openApiModal()">&#128220; Database</button>
-    <button class="btn" id="pricing-btn" onclick="openPricingModal()">$ Pricing</button>
+    <button class="btn" id="gh-btn" onclick="openModal()"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.25" y="7" width="9.5" height="6.5" rx="1.75"/><path d="M5.75 7V5.1a2.25 2.25 0 0 1 4.5 0V7"/></svg>Private repo</button>
+    <button class="btn" id="api-btn" onclick="openApiModal()"><svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="3.75" rx="4.75" ry="1.9"/><path d="M3.25 3.75v8.5c0 1.05 2.13 1.9 4.75 1.9s4.75-.85 4.75-1.9v-8.5"/><path d="M3.25 8c0 1.05 2.13 1.9 4.75 1.9S12.75 9.05 12.75 8"/></svg>Database</button>
+    <button class="btn" id="pricing-btn" onclick="openPricingModal()"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11"/><path d="M10.9 5.2H7.1a1.9 1.9 0 0 0 0 3.8h1.8a1.9 1.9 0 0 1 0 3.8H5.1"/></svg>Pricing</button>
     <div id="refresh-indicator" hidden aria-live="polite" aria-atomic="true">
       <span class="ri-dot"></span>
       <span class="ri-text"></span>
@@ -142,7 +142,7 @@
 
     <div class="field">
       <button type="button" class="btn btn-sm" id="p-resync-btn" onclick="resyncPrices()">&#8635; Resync prices (Portkey)</button>
-      <div id="p-resync-status"></div>
+      <div id="p-resync-status" role="status" aria-live="polite"></div>
     </div>
 
     </div>
@@ -193,7 +193,7 @@
       <p class="hint">Path of the JSON file inside the repository.</p>
     </div>
 
-    <div id="modal-status"></div>
+    <div id="modal-status" role="status" aria-live="polite"></div>
 
     <div class="modal-actions">
       <button class="btn btn-sm btn-danger" id="clear-btn" onclick="clearCredentials()" style="display:none">Clear credentials</button>
@@ -231,7 +231,7 @@
       </div>
     </div>
 
-    <div id="api-modal-status"></div>
+    <div id="api-modal-status" role="status" aria-live="polite"></div>
 
     <div class="modal-actions">
       <button class="btn btn-sm btn-danger" id="api-clear-btn" onclick="clearApiCredentials()" style="display:none">Clear credentials</button>
