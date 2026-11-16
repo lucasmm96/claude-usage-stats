@@ -276,7 +276,7 @@ function rebuildConfiguredList(data) {
       : price.autoFailed ? 'Auto-population failed (not found on Portkey)'
       : src === 'portkey' ? 'Auto-populated from Portkey'
       : 'Legacy (set before Portkey sync)';
-    const syncLabel = price.syncAt ? new Date(price.syncAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'never';
+    const syncLabel = price.syncAt ? new Date(price.syncAt).toLocaleString(UI_LOCALE, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'never';
     item.innerHTML = `
       <span class="p-name" title="${model}"><span class="p-src ${srcCls}" title="${srcTitle}">${srcIcon}</span><strong>${model}</strong></span>
       <span class="num">${price.input}</span>
@@ -382,7 +382,7 @@ async function resyncPrices() {
   if (status) status.textContent = 'Fetching prices from Portkey…';
   try {
     await syncPrices(globalData.sessions);
-    const t = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    const t = new Date().toLocaleTimeString(UI_LOCALE, { hour: '2-digit', minute: '2-digit' });
     if (status) status.textContent = 'Done at ' + t;
     rebuildConfiguredList(getPricingData());
     updateUnpricedBadge();

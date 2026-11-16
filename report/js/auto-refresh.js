@@ -168,7 +168,7 @@ function setIndicator(state) {
   el.className = state === 'hidden' ? '' : 'ri-' + state;
   const txt = el.querySelector('.ri-text');
   if (!txt) return;
-  const t = new Date().toLocaleTimeString(undefined,
+  const t = new Date().toLocaleTimeString(UI_LOCALE,
     { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   if (state === 'loading') txt.textContent = 'Refreshing…';
   else if (state === 'error') txt.textContent = 'Failed ' + t;

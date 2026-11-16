@@ -17,6 +17,10 @@ let activeModels = new Set(); // empty = All models shown
 let tokChart = null;
 let ctxChart = null;
 
+// Single locale for every user-facing date/time string, so the app stays in
+// English regardless of the browser's language.
+const UI_LOCALE = 'en-US';
+
 // ---- Inline icon set ----
 // Monochrome SVGs that inherit currentColor, so buttons keep one visual voice
 // across platforms (emoji render differently on every OS).

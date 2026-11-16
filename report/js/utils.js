@@ -6,7 +6,7 @@ function fmtN(n) {
   return String(n);
 }
 function fmtDt(iso) {
-  return new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleString(UI_LOCALE, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 function fmtDur(a, b) {
   const m = Math.max(0, Math.round((new Date(b) - new Date(a)) / 60000));
@@ -28,7 +28,7 @@ function dedupe(log) {
 }
 function fmtDay(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleString(undefined, { month: 'short', day: 'numeric' });
+  return new Date(y, m - 1, d).toLocaleString(UI_LOCALE, { month: 'short', day: 'numeric' });
 }
 function getFilteredSessions() {
   if (!globalData) return [];

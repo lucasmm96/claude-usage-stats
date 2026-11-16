@@ -66,10 +66,10 @@ function computeDailyByModel(range, fromDate, toDate, pricingData) {
   const models = Object.keys(tokens).sort((a, b) => {
     const ta = modelTotals[a] || 0;
     const tb = modelTotals[b] || 0;
-    if (tb !== ta) return tb - ta;                 // mais tokens primeiro
+    if (tb !== ta) return tb - ta;                 // most tokens first
     const ca = costs ? Object.values(costs[a] || {}).reduce((s, v) => s + v, 0) : 0;
     const cb = costs ? Object.values(costs[b] || {}).reduce((s, v) => s + v, 0) : 0;
-    return cb - ca;                                // desempate por custo
+    return cb - ca;                                // tiebreak by cost
   });
   return { days, models, tokens, costs: hasPricing ? costs : null };
 }
