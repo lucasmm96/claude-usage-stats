@@ -47,9 +47,6 @@ async function initSchema(sql) {
   await sql`CREATE INDEX IF NOT EXISTS idx_sessions_profile ON sessions (profile) WHERE profile IS NOT NULL`;
   await sql`CREATE INDEX IF NOT EXISTS idx_sessions_last_activity ON sessions (last_activity_at DESC)`;
 
-  // Cleanup: the unused log_errors table was removed; drop it from existing deployments
-  await sql`DROP TABLE IF EXISTS log_errors`;
-
   // Migration: add model column to log_entries (idempotent)
   await sql`ALTER TABLE log_entries ADD COLUMN IF NOT EXISTS model TEXT`;
 }
