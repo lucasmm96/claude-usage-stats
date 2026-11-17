@@ -1,7 +1,7 @@
 // GET /api/sessions
 // Reads sessions from Neon and returns in sessions.json format
 
-const { initDb, initSchema, logError } = require('./lib/db');
+const { initDb, initSchema } = require('./lib/db');
 const { requireAuth } = require('./lib/auth');
 const { handleCors } = require('./lib/cors');
 const { readSessions } = require('./lib/read-handler');
@@ -25,7 +25,6 @@ const handler = handleCors(requireAuth(async (req, res) => {
     const duration = Date.now() - startTime;
 
     if (result.error) {
-      await logError({ endpoint: '/api/sessions', http_status: 500, error_code: 'db_error', message: result.error });
       return res.status(500).json({
         error: result.error,
       });
@@ -44,7 +43,6 @@ const handler = handleCors(requireAuth(async (req, res) => {
     res.status(200).json(response);
   } catch (error) {
     console.error('[sessions] Unhandled error:', error.message);
-    await logError({ endpoint: '/api/sessions', http_status: 500, error_code: 'unhandled_error', message: error.message });
     res.status(500).json({
       error: 'Internal server error',
       message: error.message,

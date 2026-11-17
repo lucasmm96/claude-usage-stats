@@ -1,7 +1,7 @@
 // POST /api/ingest
 // Receives full sessions.json and upserts to Neon
 
-const { initDb, initSchema, logError } = require('./lib/db');
+const { initDb, initSchema } = require('./lib/db');
 const { requireAuth } = require('./lib/auth');
 const { handleCors } = require('./lib/cors');
 const { ingestSessions } = require('./lib/ingest-handler');
@@ -30,7 +30,6 @@ const handler = handleCors(requireAuth(async (req, res) => {
     const duration = Date.now() - startTime;
 
     if (result.error) {
-      await logError({ endpoint: '/api/ingest', http_status: 400, error_code: 'invalid_payload', message: result.error });
       return res.status(400).json({
         error: result.error,
         sessions_upserted: result.sessions_upserted,
@@ -47,7 +46,6 @@ const handler = handleCors(requireAuth(async (req, res) => {
     });
   } catch (error) {
     console.error('[ingest] Unhandled error:', error.message);
-    await logError({ endpoint: '/api/ingest', http_status: 500, error_code: 'unhandled_error', message: error.message });
     res.status(500).json({
       error: 'Internal server error',
       message: error.message,
