@@ -97,12 +97,12 @@ function makeDailyTooltipHandler(agg, dayTotals, dayCosts) {
     })).sort((a, b) => (b.tok - a.tok) || ((b.cost || 0) - (a.cost || 0)));
 
     let html = '<div class="tt-title">' + esc(fmtDay(day)) + '</div>';
-    html += '<div class="tt-total">Total: ' + fmtN(total) + ' tokens · ' + active + ' model' + (active === 1 ? '' : 's');
+    html += '<div class="tt-total">Total: ' + fmtTokens(total) + ' · ' + active + ' model' + (active === 1 ? '' : 's');
     if (costTotal !== null) html += ' · ' + fmtCost(costTotal);
     html += '</div>';
     for (const r of rows) {
       const pctTok = total > 0 ? Math.round(r.tok / total * 100) : 0;
-      let line = '<span class="tt-swatch" style="background:' + modelColor(r.m) + '"></span>' + esc(r.m) + ': ' + fmtN(r.tok) + ' tokens';
+      let line = '<span class="tt-swatch" style="background:' + modelColor(r.m) + '"></span>' + esc(r.m) + ': ' + fmtTokens(r.tok);
       if (r.cost !== undefined) line += ' · ' + fmtCost(r.cost);
       if (costTotal !== null) {
         const pctCost = costTotal > 0 ? Math.round(r.cost / costTotal * 100) : 0;
@@ -114,16 +114,7 @@ function makeDailyTooltipHandler(agg, dayTotals, dayCosts) {
     }
     el.innerHTML = html;
     el.style.display = 'block';
-    const wrap = el.parentElement;
-    const x = tt.caretX, y = tt.caretY;
-    const tw = el.offsetWidth, th = el.offsetHeight;
-    let left = x + 14;
-    let top = y - th - 10;
-    if (left + tw > wrap.clientWidth) left = x - tw - 14;
-    if (left < 0) left = 0;
-    if (top < 0) top = y + 14;
-    el.style.left = left + 'px';
-    el.style.top = top + 'px';
+    placeChartTooltip(el, tt);
   };
 }
 

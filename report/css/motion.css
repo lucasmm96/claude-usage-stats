@@ -37,7 +37,7 @@
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
-  #daily-tooltip {
+  .chart-tooltip {
     background: #121214;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;

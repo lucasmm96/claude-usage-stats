@@ -347,7 +347,7 @@ function renderDetail(sess) {
         <span><span class="dot" style="background:${TC.output}"></span>Output</span>
         <span style="color:var(--orange)">&#10072; Compact</span>
       </div>
-      <div class="chart-wrap"><canvas id="c-tok"></canvas></div>
+      <div class="chart-wrap"><canvas id="c-tok"></canvas><div id="tok-tooltip" class="chart-tooltip"></div></div>
     </div>
     <div class="chart-section">
       <h3>Context Window Usage</h3>

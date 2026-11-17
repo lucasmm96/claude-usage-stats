@@ -5,6 +5,9 @@ function fmtN(n) {
   if (n >= 1e3) return (n / 1e3).toFixed(1) + 'k';
   return String(n);
 }
+function fmtTokens(n) {
+  return fmtN(n) + (n === 1 ? ' token' : ' tokens');
+}
 function fmtDt(iso) {
   return new Date(iso).toLocaleString(UI_LOCALE, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
@@ -29,6 +32,20 @@ function dedupe(log) {
 function fmtDay(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleString(UI_LOCALE, { month: 'short', day: 'numeric' });
+}
+// Position a chart tooltip next to the caret, flipping when it would overflow
+// the chart's wrapper.
+function placeChartTooltip(el, tt) {
+  const wrap = el.parentElement;
+  const x = tt.caretX, y = tt.caretY;
+  const tw = el.offsetWidth, th = el.offsetHeight;
+  let left = x + 14;
+  let top = y - th - 10;
+  if (left + tw > wrap.clientWidth) left = x - tw - 14;
+  if (left < 0) left = 0;
+  if (top < 0) top = y + 14;
+  el.style.left = left + 'px';
+  el.style.top = top + 'px';
 }
 function getFilteredSessions() {
   if (!globalData) return [];
