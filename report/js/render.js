@@ -351,7 +351,7 @@ function renderDetail(sess) {
     </div>
     <div class="chart-section">
       <h3>Context Window Usage</h3>
-      <div class="chart-wrap"><canvas id="c-ctx"></canvas></div>
+      <div class="chart-wrap"><canvas id="c-ctx"></canvas><div id="ctx-tooltip" class="chart-tooltip"></div></div>
     </div>
     <div class="log-section">
       <h3>Exchange Log</h3>

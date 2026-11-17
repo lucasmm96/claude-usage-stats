@@ -26,6 +26,28 @@ function makeTokenTooltipHandler() {
   };
 }
 
+// Same frosted material for the context line: exchange number plus its context
+// percentage, with the same rows and swatch language as the bar charts.
+function makeContextTooltipHandler() {
+  return function(context) {
+    const el = document.getElementById('ctx-tooltip');
+    if (!el) return;
+    const tt = context.tooltip;
+    if (!tt || tt.opacity === 0 || !tt.dataPoints || !tt.dataPoints.length) {
+      el.style.display = 'none';
+      return;
+    }
+    const i = tt.dataPoints[0].dataIndex;
+    const v = tt.dataPoints[0].raw;
+    let html = '<div class="tt-title">Exchange ' + context.chart.data.labels[i] + '</div>';
+    html += '<div class="tt-row"><span class="tt-swatch" style="background:' +
+      TC.input + '"></span>Context: ' + (v == null ? '—' : v + '%') + '</div>';
+    el.innerHTML = html;
+    el.style.display = 'block';
+    placeChartTooltip(el, tt);
+  };
+}
+
 function buildCharts(log) {
   if (tokChart) { tokChart.destroy(); tokChart = null; }
   if (ctxChart) { ctxChart.destroy(); ctxChart = null; }
@@ -91,9 +113,15 @@ function buildCharts(log) {
       borderWidth: 2, pointRadius: 3, fill: true, tension: 0.3,
     }]},
     options: {
-      responsive: true, maintainAspectRatio: false, animation: false,
+      responsive: true, maintainAspectRatio: false,
+      animation: prefersReducedMotion() ? false : { duration: 180 },
       plugins: { legend: { display: false }, compacts: { indices: compactXs },
-        tooltip: { callbacks: { label: item => 'Context: ' + item.raw + '%' } } },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          enabled: false,
+          external: makeContextTooltipHandler(),
+        } },
       scales: {
         x: { ...baseScales.x },
         y: { ...baseScales.y, min: 0, max: 100, ticks: { ...baseScales.y.ticks, callback: v => v + '%' } }
