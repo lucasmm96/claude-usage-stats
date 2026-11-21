@@ -90,11 +90,14 @@ function makeDailyTooltipHandler(agg, dayTotals, dayCosts) {
     const total = dayTotals[i];
     const costTotal = dayCosts ? dayCosts[i] : null;
 
-    const rows = agg.models.map(m => ({
-      m,
-      tok: agg.tokens[m][day] || 0,
-      cost: agg.costs ? (agg.costs[m][day] || 0) : undefined
-    })).sort((a, b) => (b.tok - a.tok) || ((b.cost || 0) - (a.cost || 0)));
+    const rows = agg.models
+      .filter(m => (agg.tokens[m][day] || 0) > 0)
+      .map(m => ({
+        m,
+        tok: agg.tokens[m][day],
+        cost: agg.costs ? (agg.costs[m][day] || 0) : undefined
+      }))
+      .sort((a, b) => (b.tok - a.tok) || ((b.cost || 0) - (a.cost || 0)));
 
     let html = '<div class="tt-title">' + esc(fmtDay(day)) + '</div>';
     html += '<div class="tt-total">Total: ' + fmtTokens(total) + ' · ' + active + ' model' + (active === 1 ? '' : 's');
