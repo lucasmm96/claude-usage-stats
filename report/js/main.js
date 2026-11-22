@@ -33,8 +33,11 @@ document.getElementById('modal-overlay').addEventListener('click', e => {
 document.getElementById('api-modal-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('api-modal-overlay')) closeApiModal();
 });
+document.getElementById('daily-modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('daily-modal-overlay')) closeDailyModal();
+});
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeModal(); closePricingModal(); closeApiModal(); }
+  if (e.key === 'Escape') { closeModal(); closePricingModal(); closeApiModal(); closeDailyModal(); }
 });
 
 // Focus trap inside every dialog: Tab cycles within the open modal only.
@@ -52,7 +55,7 @@ function attachFocusTrap(overlay) {
     else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
   });
 }
-['modal-overlay', 'api-modal-overlay', 'pricing-modal-overlay'].forEach(id => {
+['modal-overlay', 'api-modal-overlay', 'pricing-modal-overlay', 'daily-modal-overlay'].forEach(id => {
   const overlay = document.getElementById(id);
   if (overlay) attachFocusTrap(overlay);
 });

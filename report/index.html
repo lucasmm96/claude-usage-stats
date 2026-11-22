@@ -248,6 +248,27 @@
   </div>
 </div>
 
+<!-- Daily bar detail modal (pie charts) -->
+<div class="modal-overlay" id="daily-modal-overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="daily-modal-title">
+    <button class="modal-close" onclick="closeDailyModal()" aria-label="Close">&times;</button>
+    <h2 id="daily-modal-title">Daily Tokens</h2>
+    <p class="subtitle" id="daily-modal-subtitle"></p>
+    <div class="daily-modal-pies" id="daily-modal-pies">
+      <div class="daily-modal-pie">
+        <div class="daily-modal-pie-title">Tokens</div>
+        <canvas class="daily-pie-canvas" id="daily-pie-tok" width="260" height="220"></canvas>
+        <div class="daily-pie-labels" id="daily-labels-tok"></div>
+      </div>
+      <div class="daily-modal-pie" id="daily-pie-cost-block">
+        <div class="daily-modal-pie-title">Cost</div>
+        <canvas class="daily-pie-canvas" id="daily-pie-cost" width="260" height="220"></canvas>
+        <div class="daily-pie-labels" id="daily-labels-cost"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="js/config.js"></script>
 <script src="js/pricing.js"></script>
 <script src="js/portkey.js"></script>

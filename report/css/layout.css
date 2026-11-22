@@ -333,6 +333,7 @@ h1 { font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.01em; }
   display: none;
   position: absolute;
   z-index: 20;
+  pointer-events: none;
   background: rgba(18, 18, 20, 0.88);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
   backdrop-filter: blur(12px) saturate(140%);
@@ -342,18 +343,9 @@ h1 { font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.01em; }
   padding: 7px 10px;
   font-size: var(--text-xs);
   line-height: 1.55;
+  white-space: nowrap;
   box-shadow: var(--shadow-lg);
-  overflow: visible;
-  max-width: none !important;
-  white-space: normal;
 }
-/* Garantir que o conteúdo interno também possa crescer */
-.chart-tooltip .tt-content {
-  width: auto !important;
-  max-width: none !important;
-  min-width: 450px; /* Largura mínima para caber gráfico + labels lado a lado */
-}
-
 .chart-tooltip .tt-title { font-weight: 600; }
 .chart-tooltip .tt-total {
   font-weight: 600;
@@ -370,71 +362,47 @@ h1 { font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.01em; }
   display: inline-block;
 }
 
-/* --- Tooltip tabs --- */
-.tt-nav {
+/* --- Modal: daily bar detail pies --- */
+.daily-modal-pies {
   display: flex;
-  gap: 4px;
-  margin-bottom: 8px;
-  padding: 2px;
-  background: var(--surface);
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
 }
-.tt-nav-btn {
-  flex: 1;
-  padding: 4px 6px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: background 100ms;
+.daily-modal-pie {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
-.tt-nav-btn.active {
-  background: var(--accent);
-  color: var(--on-accent);
+.daily-modal-pie-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
 }
-.tt-nav-btn:hover:not(.active) {
-  background: var(--surface2);
-}
-
-/* --- Pie chart in tooltip --- */
-.tt-pie-wrapper {
-  display: inline-flex;
-  align-items: center;
-}
-.tt-pie-canvas {
+.daily-pie-canvas {
   display: block;
   width: 220px !important;
   height: 180px !important;
 }
-
-/* Layout lado a lado para abas de pizza */
-.tt-pie-layout {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
-  flex-wrap: nowrap;
-}
-.tt-pie-labels {
+.daily-pie-labels {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-width: none; /* Remove limite para permitir labels longos */
-}
-.tt-pie-label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: var(--text-xs);
   color: var(--muted);
+}
+.daily-pie-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-/* --- Tooltip content area --- */
-.tt-content { }
+.daily-pie-label .tt-swatch {
   width: 9px;
   height: 9px;
   border-radius: 2px;
