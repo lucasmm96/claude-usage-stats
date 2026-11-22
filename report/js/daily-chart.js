@@ -5,6 +5,12 @@ function localDateStr(d) {
 
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&', '<': '<', '>': '>', '"': '"' }[c])); }
 
+function pctStr(part, total) {
+  if (!total || part <= 0) return '0%';
+  const pct = Math.round(part / total * 100);
+  return pct === 0 ? '<1%' : pct + '%';
+}
+
 let dailyChart = null;
 let activeRange = 'month';
 let currentDateFrom = '';
@@ -104,14 +110,14 @@ function makeDailyTooltipHandler(agg, dayTotals, dayCosts) {
     if (costTotal !== null) html += ' · ' + fmtCost(costTotal);
     html += '</div>';
     for (const r of rows) {
-      const pctTok = total > 0 ? Math.round(r.tok / total * 100) : 0;
+      const pctTokStr = pctStr(r.tok, total);
       let line = '<span class="tt-swatch" style="background:' + modelColor(r.m) + '"></span>' + esc(r.m) + ': ' + fmtTokens(r.tok);
       if (r.cost !== undefined) line += ' · ' + fmtCost(r.cost);
       if (costTotal !== null) {
-        const pctCost = costTotal > 0 ? Math.round(r.cost / costTotal * 100) : 0;
-        line += ' (' + pctTok + '% tok · ' + pctCost + '% cost)';
+        const pctCostStr = pctStr(r.cost || 0, costTotal);
+        line += ' (' + pctTokStr + ' tok · ' + pctCostStr + ' cost)';
       } else {
-        line += ' (' + pctTok + '% tok)';
+        line += ' (' + pctTokStr + ' tok)';
       }
       html += '<div class="tt-row">' + line + '</div>';
     }
@@ -254,8 +260,8 @@ function buildLabels(id, map, day, models, total, fmtFn) {
   if (!el) return;
   el.innerHTML = models.map(m => {
     const v = map ? (map[m] && map[m][day] !== undefined ? map[m][day] : 0) : 0;
-    const pct = total > 0 ? Math.round(v / total * 100) : 0;
-    return '<div class="daily-pie-label"><span class="tt-swatch" style="background:' + modelColor(m) + '"></span>' + esc(m) + ': ' + fmtFn(v) + ' (' + pct + '%)</div>';
+    const pct = pctStr(v, total);
+    return '<div class="daily-pie-label"><span class="tt-swatch" style="background:' + modelColor(m) + '"></span>' + esc(m) + ': ' + fmtFn(v) + ' (' + pct + ')</div>';
   }).join('');
 }
 
