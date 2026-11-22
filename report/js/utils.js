@@ -36,6 +36,7 @@ function fmtDay(dateStr) {
 // Position a chart tooltip next to the caret, flipping when it would overflow
 // the chart's wrapper.
 function placeChartTooltip(el, tt) {
+  if (!tt) return;
   const wrap = el.parentElement;
   const x = tt.caretX, y = tt.caretY;
   const tw = el.offsetWidth, th = el.offsetHeight;
