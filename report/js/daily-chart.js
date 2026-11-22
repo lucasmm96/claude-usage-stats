@@ -205,7 +205,9 @@ function openDailyModal(agg, day, dayTotals, dayCosts) {
   const activeModels = Object.keys(agg.tokens).filter(m => (agg.tokens[m][day] || 0) > 0);
 
   const tokModels = [...activeModels].sort((a, b) => (agg.tokens[b][day] || 0) - (agg.tokens[a][day] || 0));
-  const costModels = [...activeModels].sort((a, b) => (agg.costs ? (agg.costs[b][day] || 0) : 0) - (agg.costs ? (agg.costs[a][day] || 0) : 0));
+  const costModels = [...activeModels]
+    .filter(m => agg.costs && (agg.costs[m][day] || 0) > 0)
+    .sort((a, b) => (agg.costs[b][day] || 0) - (agg.costs[a][day] || 0));
 
   const overlay = document.getElementById('daily-modal-overlay');
   const subtitle = document.getElementById('daily-modal-subtitle');
@@ -215,14 +217,16 @@ function openDailyModal(agg, day, dayTotals, dayCosts) {
   buildLabels('daily-labels-cost', agg.costs, day, costModels, costTotal !== null ? costTotal : null, fmtCost);
 
   const pieBlockCost = document.getElementById('daily-pie-cost-block');
-  pieBlockCost.style.display = costTotal !== null ? 'flex' : 'none';
+  pieBlockCost.style.display = costTotal !== null && costModels.length ? 'flex' : 'none';
 
   // Destrói gráficos anteriores
   _dailyPieCharts.forEach(ch => ch.destroy());
   _dailyPieCharts = [];
 
   _dailyPieCharts.push(newDailyPie('daily-pie-tok', tokModels.map(m => agg.tokens[m][day] || 0), tokModels));
-  _dailyPieCharts.push(newDailyPie('daily-pie-cost', costModels.map(m => agg.costs ? (agg.costs[m][day] || 0) : 0), costModels));
+  if (costModels.length) {
+    _dailyPieCharts.push(newDailyPie('daily-pie-cost', costModels.map(m => agg.costs[m][day] || 0), costModels));
+  }
 
   overlay.classList.add('open');
 }
