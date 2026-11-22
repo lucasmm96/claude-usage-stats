@@ -202,20 +202,17 @@ function openDailyModal(agg, day, dayTotals, dayCosts) {
   const total = dayTotals[agg.days.indexOf(day)];
   const costTotal = dayCosts ? dayCosts[agg.days.indexOf(day)] : 0;
 
-  const modelTotals = {};
-  for (const m of Object.keys(agg.tokens)) {
-    modelTotals[m] = Object.values(agg.tokens[m] || {}).reduce((s, v) => s + v, 0);
-  }
-  const models = Object.keys(modelTotals)
-    .sort((a, b) => modelTotals[b] - modelTotals[a])
-    .filter(m => (agg.tokens[m][day] || 0) > 0);
+  const activeModels = Object.keys(agg.tokens).filter(m => (agg.tokens[m][day] || 0) > 0);
+
+  const tokModels = [...activeModels].sort((a, b) => (agg.tokens[b][day] || 0) - (agg.tokens[a][day] || 0));
+  const costModels = [...activeModels].sort((a, b) => (agg.costs ? (agg.costs[b][day] || 0) : 0) - (agg.costs ? (agg.costs[a][day] || 0) : 0));
 
   const overlay = document.getElementById('daily-modal-overlay');
   const subtitle = document.getElementById('daily-modal-subtitle');
   subtitle.textContent = esc(fmtDay(day)) + ' · Total: ' + fmtTokens(total || 0) + (costTotal !== null ? ' · ' + fmtCost(costTotal) : '');
 
-  buildLabels('daily-labels-tok', agg.tokens, day, models, total, fmtTokens);
-  buildLabels('daily-labels-cost', agg.costs, day, models, costTotal !== null ? costTotal : null, fmtCost);
+  buildLabels('daily-labels-tok', agg.tokens, day, tokModels, total, fmtTokens);
+  buildLabels('daily-labels-cost', agg.costs, day, costModels, costTotal !== null ? costTotal : null, fmtCost);
 
   const pieBlockCost = document.getElementById('daily-pie-cost-block');
   pieBlockCost.style.display = costTotal !== null ? 'flex' : 'none';
@@ -224,8 +221,8 @@ function openDailyModal(agg, day, dayTotals, dayCosts) {
   _dailyPieCharts.forEach(ch => ch.destroy());
   _dailyPieCharts = [];
 
-  _dailyPieCharts.push(newDailyPie('daily-pie-tok', models.map(m => agg.tokens[m][day] || 0), models));
-  _dailyPieCharts.push(newDailyPie('daily-pie-cost', models.map(m => agg.costs ? (agg.costs[m][day] || 0) : 0), models));
+  _dailyPieCharts.push(newDailyPie('daily-pie-tok', tokModels.map(m => agg.tokens[m][day] || 0), tokModels));
+  _dailyPieCharts.push(newDailyPie('daily-pie-cost', costModels.map(m => agg.costs ? (agg.costs[m][day] || 0) : 0), costModels));
 
   overlay.classList.add('open');
 }

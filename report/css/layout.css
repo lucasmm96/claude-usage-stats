@@ -368,6 +368,7 @@ h1 { font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.01em; }
   gap: var(--space-4);
   flex-wrap: wrap;
   margin-top: var(--space-3);
+  justify-content: center;
 }
 .daily-modal-pie {
   flex: 1 1 300px;
