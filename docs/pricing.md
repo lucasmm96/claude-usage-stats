@@ -4,6 +4,10 @@ The report estimates costs for every exchange in the log. Prices live in the bro
 `localStorage` (key `claude_usage_stats_pricing`) and are auto-populated from the
 [Portkey Models API](https://www.portkey.ai/) pricing data, with manual overrides.
 
+UI conventions for the pricing modal follow the general contract in
+[`design.md`](design.md). This document covers pricing behavior and data, not the
+broader visual system.
+
 ## Storage schema (version 2)
 
 ```jsonc

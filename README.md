@@ -101,7 +101,7 @@ You can also append `?data=<url>` to the page URL to auto-load on open.
 
 ### Option C — Connect to a private GitHub repo
 
-Click **🔒 Private repo** in the header. A modal will ask for:
+Click **GitHub repo** in the header. A modal will ask for:
 
 | Field | Description |
 |---|---|
@@ -113,7 +113,7 @@ The PAT is saved to `localStorage` and never sent anywhere other than `api.githu
 
 ### Option D — Connect to the database
 
-Click **🗄 Database** in the header. A modal will ask for:
+Click **Database** in the header. A modal will ask for:
 
 | Field | Description |
 |---|---|
@@ -264,6 +264,34 @@ Claude Code calls `statusLine.command` after every response, piping a JSON paylo
 The bash layer then optionally runs a git commit/push and an API upload in parallel background subshells.
 
 See **[docs/setup.md](docs/setup.md)** for a deeper technical explanation.
+
+---
+
+## Development
+
+No build step and no npm install are required. Node.js built-ins and the system
+Chrome/Edge are enough.
+
+```bash
+bash tests/run.sh
+node tests/design-check.mjs --static
+node tests/design-check.mjs --static --strict
+node tests/visual.mjs
+```
+
+The static design check is advisory and exits 0 by default. `--strict` exits 1
+when findings remain after `tests/design-baseline.json`. The visual harness
+renders the report through headless Chrome and writes screenshots plus a
+manifest under `tests/artifacts/visual/` (gitignored). It needs network access
+for the pinned Chart.js CDN.
+
+The report design contract is **[docs/design.md](docs/design.md)**. The Apple
+design skill is pinned under `.claude/skills/apple-design/` and must not be
+edited.
+
+The project also ships `.claude/settings.json` with advisory hooks: a
+SessionStart contract and a PreToolUse reminder for `report/` edits. These hooks
+are project-local and do not affect other repositories.
 
 ---
 

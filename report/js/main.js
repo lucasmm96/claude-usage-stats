@@ -29,7 +29,7 @@ function openLoadMenu(focusUrl) {
   const menu = document.getElementById('load-menu');
   const trigger = document.getElementById('open-btn');
   if (!menu || !trigger) return;
-  if (window.matchMedia('(max-width: 760px)').matches) {
+  if (window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches) {
     menu.classList.add('open');
     trigger.setAttribute('aria-expanded', 'true');
   }

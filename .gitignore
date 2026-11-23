@@ -2,3 +2,5 @@
 *.local.conf
 .env.local
 .env*.local
+tests/artifacts/
+tests/.cache/

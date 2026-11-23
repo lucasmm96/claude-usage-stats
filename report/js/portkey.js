@@ -329,14 +329,3 @@ function kickoffSync() {
     syncPrices(globalData.sessions);
   }
 }
-
-// ---- Badge CSS injection (run once on load) ----
-(function () {
-  if (document.getElementById('portkey-badge-style')) return;
-  const style = document.createElement('style');
-  style.id = 'portkey-badge-style';
-  style.textContent = `
-    .price-meta { font-size: 10px; color: var(--muted); margin-left: 4px; }
-  `;
-  document.head.appendChild(style);
-})();

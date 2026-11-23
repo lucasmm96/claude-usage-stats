@@ -96,7 +96,7 @@
   </div>
   <div id="daily-legend" class="chart-legend"></div>
   <div class="daily-chart-wrap">
-    <canvas id="c-daily" role="img"></canvas>
+    <canvas id="c-daily" role="img" tabindex="0"></canvas>
     <div id="daily-tooltip" class="chart-tooltip"></div>
     <div class="daily-empty" style="display:none">
       <span>No data in this period</span>
@@ -284,12 +284,12 @@
       <div class="daily-modal-pies-inner">
         <div class="daily-modal-pie">
           <div class="daily-modal-pie-title">Tokens</div>
-          <canvas class="daily-pie-canvas" id="daily-pie-tok" width="260" height="220"></canvas>
+          <canvas class="daily-pie-canvas" id="daily-pie-tok" width="260" height="220" role="img" aria-label="Token share by model"></canvas>
           <div class="daily-pie-labels" id="daily-labels-tok"></div>
         </div>
         <div class="daily-modal-pie" id="daily-pie-cost-block">
           <div class="daily-modal-pie-title">Cost</div>
-          <canvas class="daily-pie-canvas" id="daily-pie-cost" width="260" height="220"></canvas>
+          <canvas class="daily-pie-canvas" id="daily-pie-cost" width="260" height="220" role="img" aria-label="Cost share by model"></canvas>
           <div class="daily-pie-labels" id="daily-labels-cost"></div>
         </div>
       </div>

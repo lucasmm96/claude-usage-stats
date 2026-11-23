@@ -22,7 +22,7 @@
   .modal-overlay.open { transition: opacity 100ms ease, visibility 0s; }
   .modal { transition: opacity 100ms ease; transform: none !important; }
   .modal-overlay.open .modal { transition: opacity 100ms ease; transform: none; }
-  .toast { transition: opacity 100ms ease; transform: translate(-50%, 0); }
+  .toast, .toast.show { transition: opacity 100ms ease; transform: translate(-50%, 0); }
   .detail-header, .detail-stats, .chart-section, .log-section { animation: none; }
 }
 
@@ -39,7 +39,7 @@
     backdrop-filter: none;
   }
   .chart-tooltip {
-    background: #121214;
+    background: var(--tooltip-bg-solid);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -70,4 +70,14 @@
   }
   .detail-header::after { display: none; }
   .sess-item.active { border-left-width: 3px; }
+}
+
+/* Touch targets follow the 44 px minimum on small screens and touch pointers.
+   Kept last so component min-heights cannot shrink them. */
+@media (max-width: 760px), (pointer: coarse) {
+  .btn, .profile-btn, .range-btn, .modal-tab, .btn-remove, .modal-close,
+  .filter-dropdown-row, .sess-item, .toast-action,
+  button, [role="button"], .p-free-label { min-height: 44px; }
+  .modal-close, .btn-remove, .toast-action { min-width: 44px; }
+  input, select { min-height: 44px; }
 }

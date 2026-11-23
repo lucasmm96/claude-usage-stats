@@ -64,10 +64,9 @@ function buildCharts(log) {
     }
   }
 
-  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const grid = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const grid = cssVar('--chart-grid');
   const tick = cssVar('--muted');
-  const barBorder = dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)';
+  const barBorder = cssVar('--chart-bar-border');
   const barStyle = {
     borderColor: barBorder,
     borderWidth: 1,
@@ -76,8 +75,8 @@ function buildCharts(log) {
     maxBarThickness: 40,
   };
   const baseScales = {
-    x: { ticks: { color: tick, font: { size: 11 }, maxTicksLimit: 15 }, grid: { color: grid } },
-    y: { ticks: { color: tick, font: { size: 11 } }, grid: { color: grid } }
+    x: { ticks: { color: tick, font: { size: chartFontSize() }, maxTicksLimit: 15 }, grid: { color: grid } },
+    y: { ticks: { color: tick, font: { size: chartFontSize() } }, grid: { color: grid } }
   };
 
   tokChart = new Chart(document.getElementById('c-tok'), {

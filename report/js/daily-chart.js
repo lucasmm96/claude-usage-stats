@@ -12,6 +12,7 @@ function pctStr(part, total) {
 }
 
 let dailyChart = null;
+let _dailyModalTrigger = null;
 let activeRange = 0;
 let currentDateFrom = '';
 let currentDateTo = '';
@@ -163,11 +164,9 @@ function renderDailyChart(range, fromDate, toDate) {
   );
   canvasEl.setAttribute('aria-describedby', 'daily-legend');
 
-  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches ||
-    document.documentElement.dataset.theme === 'dark';
-  const gridColor = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const gridColor = cssVar('--chart-grid');
   const tickColor = cssVar('--muted');
-  const borderColor = dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)';
+  const borderColor = cssVar('--chart-bar-border');
   dailyChart = new Chart(canvasEl, {
     type: 'bar',
     data: {
@@ -198,18 +197,26 @@ function renderDailyChart(range, fromDate, toDate) {
         },
       },
       scales: {
-        x: { stacked: true, ticks: { color: tickColor, font: { size: 11 }, maxTicksLimit: 20 }, grid: { color: gridColor } },
-        y: { stacked: true, ticks: { color: tickColor, font: { size: 11 }, callback: v => fmtN(v) }, grid: { color: gridColor }, beginAtZero: true }
+        x: { stacked: true, ticks: { color: tickColor, font: { size: chartFontSize() }, maxTicksLimit: 20 }, grid: { color: gridColor } },
+        y: { stacked: true, ticks: { color: tickColor, font: { size: chartFontSize() }, callback: v => fmtN(v) }, grid: { color: gridColor }, beginAtZero: true }
       }
     }
   });
 
   // Click na barra: abre modal com os gráficos pizza do dia
+  canvasEl.tabIndex = 0;
   canvasEl.onclick = (e) => {
     const points = dailyChart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
     if (!points.length) return;
+    canvasEl.focus();
     const dayIndex = points[0].index;
     const day = agg.days[dayIndex];
+    openDailyModal(agg, day, dayTotals, dayCosts);
+  };
+  canvasEl.onkeydown = (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    const day = agg.days[agg.days.length - 1];
     openDailyModal(agg, day, dayTotals, dayCosts);
   };
 }
@@ -244,6 +251,7 @@ function openDailyModal(agg, day, dayTotals, dayCosts) {
     .sort((a, b) => (agg.costs[b][day] || 0) - (agg.costs[a][day] || 0));
 
   const overlay = document.getElementById('daily-modal-overlay');
+  _dailyModalTrigger = document.activeElement;
   const subtitle = document.getElementById('daily-modal-subtitle');
   subtitle.textContent = esc(fmtDay(day)) + ' · Total: ' + fmtTokens(total || 0) + (costTotal !== null ? ' · ' + fmtCost(costTotal) : '');
 
@@ -264,6 +272,10 @@ function openDailyModal(agg, day, dayTotals, dayCosts) {
   }
 
   overlay.classList.add('open');
+  requestAnimationFrame(() => {
+    const target = overlay.querySelector('.modal-close') || overlay.querySelector('.modal');
+    if (target) target.focus();
+  });
 }
 
 function closeDailyModal() {
@@ -273,6 +285,8 @@ function closeDailyModal() {
   _dailyPieCharts.forEach(ch => ch.destroy());
   _dailyPieCharts = [];
   document.querySelectorAll('.daily-modal-pie .chart-tooltip').forEach(t => t.remove());
+  if (_dailyModalTrigger && document.contains(_dailyModalTrigger)) _dailyModalTrigger.focus();
+  _dailyModalTrigger = null;
 }
 
 function newDailyPie(id, values, models, fmtFn) {

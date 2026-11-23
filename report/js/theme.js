@@ -3,6 +3,10 @@ function cssVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
+function chartFontSize() {
+  return Number.parseFloat(cssVar('--chart-font-size')) || 11;
+}
+
 // ---- Token colors (read from CSS vars so they respond to theme) ----
 const TC = {
   get input()       { return cssVar('--tc-input'); },
@@ -39,7 +43,7 @@ function buildModelColors(names) {
 }
 
 function modelColor(name) {
-  return _modelColorMap.get(name) || '#94a3b8';
+  return _modelColorMap.get(name) || cssVar('--model-color-fallback');
 }
 
 // ---- Chart.js plugin: compact event vertical lines ----
@@ -67,7 +71,7 @@ Chart.register(compactPlugin);
 
 // Charts inherit the report's type and palette instead of Chart.js defaults.
 Chart.defaults.font.family = cssVar('--font-sans');
-Chart.defaults.font.size = 11;
+Chart.defaults.font.size = chartFontSize();
 Chart.defaults.color = cssVar('--muted');
 
 // Rebuild model colors and charts when the OS theme changes.

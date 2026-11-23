@@ -392,11 +392,11 @@ h1 { font-size: var(--text-lg); font-weight: 600; letter-spacing: var(--tracking
   position: absolute;
   z-index: 20;
   pointer-events: none;
-  background: rgba(18, 18, 20, 0.88);
+  background: var(--tooltip-bg);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
   backdrop-filter: blur(12px) saturate(140%);
-  color: #f0f0f0;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--tooltip-text);
+  border: 1px solid var(--tooltip-border);
   border-radius: var(--radius-md);
   padding: 7px 10px;
   font-size: var(--text-xs);
@@ -408,7 +408,7 @@ h1 { font-size: var(--text-lg); font-weight: 600; letter-spacing: var(--tracking
   font-weight: 600;
   padding-bottom: 4px;
   margin-bottom: 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom: 1px solid var(--tooltip-divider);
 }
 .chart-tooltip .tt-row { display: flex; align-items: center; gap: 6px; }
 .chart-tooltip .tt-swatch {
@@ -593,14 +593,4 @@ body:not(.has-data) #main { display: none; }
     max-width: min(320px, calc(100vw - 2 * var(--space-3)));
     white-space: normal;
   }
-}
-
-/* Touch targets follow the 44 px minimum on small screens and touch pointers. */
-@media (max-width: 760px), (pointer: coarse) {
-  .btn, .profile-btn, .range-btn, .modal-tab, .btn-remove, .modal-close,
-  .filter-dropdown-row, .sess-item { min-height: 44px; }
-  .modal-close, .btn-remove { min-width: 44px; }
-  #url-in, .custom-dates input[type="date"],
-  .field input[type="text"], .field input[type="password"], .field input[type="number"],
-  #p-model-select { min-height: 44px; }
 }

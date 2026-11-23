@@ -430,6 +430,16 @@ done <<< "$REPORT_RESULT"
 
 # ---------------------------------------------------------------------------
 echo ""
+echo "=== DESIGN STATIC CHECKS (advisory) ==="
+# Advisory by design: never increments FAIL or blocks the suite.
+if node "$REPO_ROOT/tests/design-check.mjs" --static; then
+  echo "ℹ️  design checks completed (advisory)"
+else
+  echo "⚠️  design checks could not complete (advisory)"
+fi
+
+# ---------------------------------------------------------------------------
+echo ""
 echo "=== SUMMARY ==="
 echo "Passed: $PASS  Failed: $FAIL  Skipped: $SKIP"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

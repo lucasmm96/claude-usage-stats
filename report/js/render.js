@@ -395,11 +395,11 @@ function renderDetail(sess) {
         <span><span class="dot" style="background:${TC.output}"></span>Output</span>
         <span style="color:var(--orange)">&#10072; Compact</span>
       </div>
-      <div class="chart-wrap"><canvas id="c-tok"></canvas><div id="tok-tooltip" class="chart-tooltip"></div></div>
+      <div class="chart-wrap"><canvas id="c-tok" role="img" aria-label="Tokens per exchange by token type"></canvas><div id="tok-tooltip" class="chart-tooltip"></div></div>
     </div>
     <div class="chart-section">
       <h3>Context Window Usage</h3>
-      <div class="chart-wrap"><canvas id="c-ctx"></canvas><div id="ctx-tooltip" class="chart-tooltip"></div></div>
+      <div class="chart-wrap"><canvas id="c-ctx" role="img" aria-label="Context window usage per exchange"></canvas><div id="ctx-tooltip" class="chart-tooltip"></div></div>
     </div>
     <div class="log-section">
       <h3>Exchange Log</h3>
@@ -411,7 +411,7 @@ function renderDetail(sess) {
 }
 
 function scrollDetailIntoView() {
-  if (!window.matchMedia('(max-width: 760px)').matches) return;
+  if (!window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches) return;
   const detail = document.getElementById('detail');
   if (!detail) return;
   requestAnimationFrame(() => {

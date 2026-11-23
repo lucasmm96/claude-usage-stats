@@ -30,6 +30,21 @@
   --tc-cache-read: #4ade80;
   --tc-cache-write: #fb923c;
   --tc-output: #a78bfa;
+  --chart-grid: rgba(255, 255, 255, 0.06);
+  --chart-bar-border: rgba(255, 255, 255, 0.18);
+  --chart-font-size: 11px;
+  --model-color-fallback: #94a3b8;
+
+  /* Always-dark tooltip material */
+  --tooltip-bg: rgba(18, 18, 20, 0.88);
+  --tooltip-bg-solid: #121214;
+  --tooltip-text: #f0f0f0;
+  --tooltip-border: rgba(255, 255, 255, 0.18);
+  --tooltip-divider: rgba(255, 255, 255, 0.16);
+
+  /* Semantic tints */
+  --unpriced-bg: color-mix(in srgb, var(--orange) 15%, transparent);
+  --unpriced-border: color-mix(in srgb, var(--orange) 30%, transparent);
 
   /* Spacing (4px base, scales with the user's text size) */
   --space-1: 0.25rem;
@@ -52,6 +67,7 @@
   --text-md:   0.875rem;
   --text-lg:   1rem;
   --text-xl:   1.3125rem;
+  --text-icon: 1.125rem;
 
   /* Tracking */
   --tracking-tight:  -0.02em;
@@ -97,5 +113,8 @@
     --tc-cache-read: #16a34a;
     --tc-cache-write: #ea580c;
     --tc-output: #7c3aed;
+    --chart-grid: rgba(0, 0, 0, 0.06);
+    --chart-bar-border: rgba(0, 0, 0, 0.18);
+    --model-color-fallback: #64748b;
   }
 }

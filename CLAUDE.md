@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-A Claude Code status line hook that persists token usage and context window data across sessions. Users install `scripts/claude-usage-stats.sh` into `~/.claude/claude-usage-stats/` and register it in `~/.claude/settings.json`. The report is a zero-dependency SPA that renders the log with cost estimates. There is no build step and no test suite; the optional `api/` directory holds Vercel serverless functions (not required for local use).
+A Claude Code status line hook that persists token usage and context window data across sessions. Users install `scripts/claude-usage-stats.sh` into `~/.claude/claude-usage-stats/` and register it in `~/.claude/settings.json`. The report is a zero-dependency SPA that renders the log with cost estimates. There is no build step. `tests/run.sh` covers the hook, API, and report helpers; design checks live in `tests/design-check.mjs`. The optional `api/` directory holds Vercel serverless functions (not required for local use).
 
 ## Files
 
@@ -19,7 +19,11 @@ A Claude Code status line hook that persists token usage and context window data
 - **`report/css/`** — per-component stylesheets (`base`, `layout`, `modal`, `detail`, `log-table`, `tokens`, `motion`).
 - **`api/`** — optional Vercel serverless deployment (auth, ingest, sessions) with its own `package.json`.
 - **`examples/sessions.example.json`** — anonymized sample data. Update this when the log schema changes.
-- **`docs/`** — user-facing documentation. `log-format.md` is the authoritative log schema; `pricing.md` documents the report pricing system.
+- **`docs/`** — user-facing documentation. `log-format.md` is the authoritative log schema; `pricing.md` documents the report pricing system; `design.md` is the report design contract.
+- **`tests/run.sh`** — fixture tests for the hook, API, and report helpers.
+- **`tests/design-check.mjs`** — zero-dependency static checks for the report design system.
+- **`tests/visual.mjs`** — Chrome/CDP visual checks and screenshots (advisory).
+- **`.claude/settings.json`** and **`.claude/hooks/`** — project-local SessionStart/PreToolUse design hooks.
 
 ## Architecture
 
@@ -80,7 +84,37 @@ The Node.js portion can be extracted and run with `node -e` for isolated debuggi
 
 ### Report / pricing
 
-Open `report/index.html` (e.g. `python -m http.server` in the repo root, or `file://`), load a sessions file (URL param `?data=` or file picker), then check `$ Pricing` → Configured. Portkey sync needs network access; provider JSONs have CORS enabled. Manual smoke check: `node --check report/js/portkey.js report/js/pricing.js report/js/utils.js`. There is no automated test suite.
+Open `report/index.html` (e.g. `python -m http.server` in the repo root, or `file://`), load a sessions file (URL param `?data=` or file picker), then check `$ Pricing` → Configured. Portkey sync needs network access; provider JSONs have CORS enabled.
+
+Run the syntax and design checks with:
+
+```bash
+node tests/design-check.mjs --static
+node tests/design-check.mjs --static --strict
+node tests/visual.mjs
+bash tests/run.sh
+```
+
+`node --check a.js b.js` only checks the first file, so use the bundled check in
+`tests/design-check.mjs` for cross-file syntax and global-name collisions.
+
+## Report design work
+
+Before changing `report/index.html`, `report/css/**`, or visual report JS, read
+`docs/design.md` and the pinned skill at `.claude/skills/apple-design/SKILL.md`.
+Never edit `.claude/skills/apple-design/SKILL.md` or
+`.agents/skills/apple-design/SKILL.md`.
+
+Record the four-line design intent (human need, affected states, reused tokens,
+accessibility behavior) before coding. Use tokens only; no raw colors or type
+sizes outside `report/css/tokens.css`. Ship reduced-motion,
+reduced-transparency, contrast, 44px touch, focus, and canvas-label behavior with
+the component. The mobile breakpoint is 760 (`MOBILE_BREAKPOINT` in JS).
+
+Run `node tests/design-check.mjs --static` after edits. For visual changes, also
+run `node tests/visual.mjs` and review the artifacts in `tests/artifacts/`.
+These checks are advisory and never block commit or merge. Exceptions belong in
+`tests/design-baseline.json` with a reason and expiry.
 
 ## Key invariants
 
@@ -93,3 +127,4 @@ Open `report/index.html` (e.g. `python -m http.server` in the repo root, or `fil
 - **Pricing schema versioned** — `getPricingData()` migrates old blobs to version 2 in place, one-time.
 - **One global `MAX_HISTORY`** — declared once in `portkey.js`; classic `<script>` tags share the global lexical environment, so redeclaring it in `pricing.js` throws a SyntaxError and kills both scripts. Never redeclare top-level `const`/`let` that another report script declares.
 - **`normKey` lives in `pricing.js`** (Helpers section) but is used by `utils.js:findPrice` and `portkey.js:lookupModelPricing`. Keep it global.
+- **Design contract first** — visual report changes follow `docs/design.md`; the Apple skill is pinned and must not be edited.
