@@ -228,10 +228,11 @@ function openDailyModal(agg, day, dayTotals, dayCosts) {
   // Destrói gráficos anteriores
   _dailyPieCharts.forEach(ch => ch.destroy());
   _dailyPieCharts = [];
+  document.querySelectorAll('.daily-modal-pie .chart-tooltip').forEach(t => t.remove());
 
-  _dailyPieCharts.push(newDailyPie('daily-pie-tok', tokModels.map(m => agg.tokens[m][day] || 0), tokModels));
+  _dailyPieCharts.push(newDailyPie('daily-pie-tok', tokModels.map(m => agg.tokens[m][day] || 0), tokModels, fmtTokens));
   if (costModels.length) {
-    _dailyPieCharts.push(newDailyPie('daily-pie-cost', costModels.map(m => agg.costs[m][day] || 0), costModels));
+    _dailyPieCharts.push(newDailyPie('daily-pie-cost', costModels.map(m => agg.costs[m][day] || 0), costModels, fmtCost));
   }
 
   overlay.classList.add('open');
@@ -243,15 +244,64 @@ function closeDailyModal() {
   overlay.classList.remove('open');
   _dailyPieCharts.forEach(ch => ch.destroy());
   _dailyPieCharts = [];
+  document.querySelectorAll('.daily-modal-pie .chart-tooltip').forEach(t => t.remove());
 }
 
-function newDailyPie(id, values, models) {
+function newDailyPie(id, values, models, fmtFn) {
   const canvas = document.getElementById(id);
   if (!canvas) return null;
+  const total = values.reduce((a, b) => a + b, 0);
+
+  // Create tooltip element appended to chart's parent container
+  const tip = document.createElement('div');
+  tip.className = 'chart-tooltip';
+  tip.style.display = 'none';
+  canvas.parentElement.appendChild(tip);
+
   return new Chart(canvas.getContext('2d'), {
     type: 'pie',
     data: { labels: models.map(m => esc(m)), datasets: [{ data: values, backgroundColor: models.map(m => modelColor(m)) }] },
-    options: { responsive: false, animation: prefersReducedMotion() ? false : { duration: 180 }, plugins: { legend: { display: false }, tooltip: { enabled: false } }, cutout: '70%' }
+    options: {
+      responsive: false,
+      animation: prefersReducedMotion() ? false : { duration: 180 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: false,
+          external: function(context) {
+            const tt = context.tooltip;
+            if (!tt || tt.opacity === 0 || !tt.dataPoints || !tt.dataPoints.length) {
+              tip.style.display = 'none';
+              return;
+            }
+            const i = tt.dataPoints[0].dataIndex;
+            const label = context.chart.data.labels[i] || '';
+            const value = context.chart.data.datasets[0].data[i] || 0;
+            const pct = total > 0 ? Math.round(value / total * 100) : 0;
+            const formatted = fmtFn ? fmtFn(value) : String(value);
+            const color = context.chart.data.datasets[0].backgroundColor[i] || '';
+
+            tip.innerHTML = '<span class="tt-swatch" style="background:' + color + '; margin-right: 5px;"></span>' + esc(label) + ': ' + formatted + ' (' + pct + '%)';
+            tip.style.display = 'block';
+
+            // Position tooltip relative to chart's parent container
+            const wrap = canvas.parentElement;
+            const rect = canvas.getBoundingClientRect();
+            const wrapRect = wrap.getBoundingClientRect();
+            let left = tt.caretX + (rect.left - wrapRect.left);
+            let top = tt.caretY + (rect.top - wrapRect.top);
+            const tipW = tip.offsetWidth;
+            const tipH = tip.offsetHeight;
+            if (left + tipW > wrap.clientWidth) left = left - tipW - 14;
+            if (left < 0) left = 0;
+            if (top < 0) top = tt.caretY + (rect.top - wrapRect.top) + 14;
+            tip.style.left = left + 'px';
+            tip.style.top = top + 'px';
+          }
+        }
+      },
+      cutout: '70%'
+    }
   });
 }
 
