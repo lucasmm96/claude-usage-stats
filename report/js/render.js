@@ -172,9 +172,37 @@ function renderModelBar() {
   });
 }
 
+// Empty app copy distinguishes "nothing loaded" from "loaded, but empty file".
+function updateEmptyApp() {
+  const title = document.getElementById('empty-title');
+  const desc = document.getElementById('empty-desc');
+  if (!title || !desc) return;
+  if (globalData && !Object.keys(globalData.sessions || {}).length) {
+    title.textContent = 'No sessions found';
+    desc.textContent = 'The file loaded, but it contains no sessions. Load another file or connect a source above.';
+  } else {
+    title.textContent = 'Open your usage data';
+    desc.textContent = 'Load the JSON log produced by the status line hook, or connect a URL, GitHub repo, or database.';
+  }
+}
+
+function clearAllFilters() {
+  activeProfile = null;
+  activeModels.clear();
+  if (typeof setRange === 'function') {
+    setRange(0);
+  } else {
+    renderAll();
+  }
+}
+
 function renderAll() {
   const sessions = getFilteredSessions()
     .sort((a, b) => new Date(b.last_activity_at) - new Date(a.last_activity_at));
+
+  const hasData = !!(globalData && Object.keys(globalData.sessions || {}).length);
+  document.body.classList.toggle('has-data', hasData);
+  updateEmptyApp();
 
   let statCount = 0, totalTok = 0, totalComp = 0, totalCR = 0, totalIn = 0;
   for (const s of sessions) {
@@ -219,7 +247,7 @@ function renderAll() {
       }
     }
     let costText = fmtCost(cost);
-    if (unpriced > 0) costText += ` <span class="cost-warning">⚠︎ ${fmtN(unpriced)} unpriced</span>`;
+    if (unpriced > 0) costText += ` <span class="cost-warning">${ICONS.warning}${fmtN(unpriced)} unpriced</span>`;
     document.getElementById('s-cost').innerHTML = costText;
     costStat.style.display = '';
     statBar.classList.add('has-cost');
@@ -241,6 +269,23 @@ function renderAll() {
   list.innerHTML = '';
   let activeItem = null;
 
+  if (!sessions.length) {
+    const empty = document.createElement('div');
+    empty.className = 'list-empty';
+    const msg = document.createElement('div');
+    msg.textContent = 'No sessions match the current filters.';
+    const showAll = document.createElement('button');
+    showAll.type = 'button';
+    showAll.className = 'btn btn-sm';
+    showAll.textContent = 'Show all';
+    showAll.onclick = clearAllFilters;
+    empty.appendChild(msg);
+    empty.appendChild(showAll);
+    list.appendChild(empty);
+    const detail = document.getElementById('detail');
+    if (detail) detail.innerHTML = '<div class="empty-state">No session to display</div>';
+  }
+
   sessions.forEach((sess, i) => {
     const st = sessStats(sess);
     const el = document.createElement('div');
@@ -261,6 +306,7 @@ function renderAll() {
       el.setAttribute('aria-current', 'true');
       activeSessId = sess.session_id;
       renderDetail(sess);
+      scrollDetailIntoView();
     };
     el.onclick = select;
     el.addEventListener('keydown', e => {
@@ -308,6 +354,7 @@ function renderAll() {
 
   renderProfileBar();
   renderModelBar();
+  updateDateScope(sessions);
   initDailySection();
 }
 
@@ -329,6 +376,7 @@ function renderDetail(sess) {
 
   detail.innerHTML = `
     <div class="detail-header">
+      <button class="btn btn-sm detail-back" type="button" onclick="backToSessions()" aria-label="Back to sessions">${ICONS.chevronLeft}Sessions</button>
       <h2>${sess.session_name || sess.session_id}</h2>
       <p>${modelDisplay} &middot; ${fmtDt(sess.started_at)} &middot; ${fmtDur(sess.started_at, sess.last_activity_at)} &middot; ${st.exch.length} exchanges</p>
     </div>
@@ -360,4 +408,27 @@ function renderDetail(sess) {
   `;
 
   buildCharts(st.log);
+}
+
+function scrollDetailIntoView() {
+  if (!window.matchMedia('(max-width: 760px)').matches) return;
+  const detail = document.getElementById('detail');
+  if (!detail) return;
+  requestAnimationFrame(() => {
+    detail.scrollIntoView({
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+      block: 'start'
+    });
+  });
+}
+
+function backToSessions() {
+  const list = document.getElementById('sessions');
+  if (!list) return;
+  list.scrollIntoView({
+    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    block: 'start'
+  });
+  const active = document.querySelector('.sess-item.active');
+  if (active) active.focus({ preventScroll: true });
 }

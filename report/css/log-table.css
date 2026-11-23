@@ -1,5 +1,5 @@
 /* --- Log table --- */
-table.log { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+table.log { width: 100%; min-width: 640px; border-collapse: collapse; font-size: var(--text-sm); }
 table.log th {
   text-align: right;
   padding: 5px var(--space-2);

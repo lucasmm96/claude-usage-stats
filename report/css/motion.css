@@ -22,6 +22,7 @@
   .modal-overlay.open { transition: opacity 100ms ease, visibility 0s; }
   .modal { transition: opacity 100ms ease; transform: none !important; }
   .modal-overlay.open .modal { transition: opacity 100ms ease; transform: none; }
+  .toast { transition: opacity 100ms ease; transform: translate(-50%, 0); }
   .detail-header, .detail-stats, .chart-section, .log-section { animation: none; }
 }
 
@@ -42,6 +43,9 @@
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
+  .load-menu, .toast {
+    background: var(--surface2);
+  }
 }
 
 /* More contrast: stronger borders, solid surfaces, full-strength labels. */
@@ -57,8 +61,13 @@
   }
   .modal-overlay { background: var(--scrim-solid); }
   .btn, .profile-btn, .range-btn, .filter-dropdown-panel,
-  .field input, #url-in, #p-model-select, .price-item {
+  .field input, #url-in, #p-model-select, .price-item,
+  .load-menu, .date-filter, .toast {
     border-color: var(--border-strong);
   }
+  .detail-header {
+    border-bottom: 1px solid var(--border-strong);
+  }
+  .detail-header::after { display: none; }
   .sess-item.active { border-left-width: 3px; }
 }

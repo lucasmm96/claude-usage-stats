@@ -3,7 +3,10 @@
 updateGhButton(false);
 updateApiButton(false);
 
-document.getElementById('file-btn').onclick = () => document.getElementById('file-in').click();
+document.getElementById('file-btn').onclick = () => {
+  document.getElementById('file-in').click();
+  closeLoadMenu();
+};
 document.getElementById('file-in').addEventListener('change', e => {
   const f = e.target.files[0];
   if (!f) return;
@@ -13,9 +16,52 @@ document.getElementById('file-in').addEventListener('change', e => {
   e.target.value = '';
 });
 
+// ---- Compact source menu (mobile) ----
+function closeLoadMenu() {
+  const menu = document.getElementById('load-menu');
+  const trigger = document.getElementById('open-btn');
+  if (!menu || !trigger) return;
+  menu.classList.remove('open');
+  trigger.setAttribute('aria-expanded', 'false');
+}
+
+function openLoadMenu(focusUrl) {
+  const menu = document.getElementById('load-menu');
+  const trigger = document.getElementById('open-btn');
+  if (!menu || !trigger) return;
+  if (window.matchMedia('(max-width: 760px)').matches) {
+    menu.classList.add('open');
+    trigger.setAttribute('aria-expanded', 'true');
+  }
+  if (focusUrl) {
+    requestAnimationFrame(() => document.getElementById('url-in').focus());
+  }
+}
+
+document.getElementById('open-btn').onclick = () => {
+  const menu = document.getElementById('load-menu');
+  const open = !menu.classList.contains('open');
+  if (open) openLoadMenu(false);
+  else closeLoadMenu();
+};
+document.getElementById('gh-btn').addEventListener('click', closeLoadMenu);
+document.getElementById('api-btn').addEventListener('click', closeLoadMenu);
+document.addEventListener('click', e => {
+  if (!e.target.closest('.load-area')) closeLoadMenu();
+});
+
+document.getElementById('empty-file-btn').onclick = () => document.getElementById('file-in').click();
+document.getElementById('empty-url-btn').onclick = (e) => {
+  e.stopPropagation();
+  openLoadMenu(true);
+};
+
 // ---- URL loader ----
 document.getElementById('url-btn').onclick = fetchUrl;
-document.getElementById('url-in').addEventListener('keydown', e => { if (e.key === 'Enter') fetchUrl(); });
+document.getElementById('url-btn').addEventListener('click', closeLoadMenu);
+document.getElementById('url-in').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { fetchUrl(); closeLoadMenu(); }
+});
 
 // ---- Auto-load from ?data= param ----
 (function() {
@@ -37,7 +83,7 @@ document.getElementById('daily-modal-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('daily-modal-overlay')) closeDailyModal();
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeModal(); closePricingModal(); closeApiModal(); closeDailyModal(); }
+  if (e.key === 'Escape') { closeModal(); closePricingModal(); closeApiModal(); closeDailyModal(); closeLoadMenu(); }
 });
 
 // Focus trap inside every dialog: Tab cycles within the open modal only.

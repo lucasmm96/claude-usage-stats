@@ -12,7 +12,7 @@ function pctStr(part, total) {
 }
 
 let dailyChart = null;
-let activeRange = 'month';
+let activeRange = 0;
 let currentDateFrom = '';
 let currentDateTo = '';
 let dailySectionInitialized = false;
@@ -140,11 +140,14 @@ function renderDailyChart(range, fromDate, toDate) {
   if (!agg.days.length) {
     emptyEl.style.display = 'flex';
     canvasEl.style.display = 'none';
+    canvasEl.removeAttribute('aria-label');
+    renderDailyLegend([]);
     return;
   }
 
   emptyEl.style.display = 'none';
   canvasEl.style.display = '';
+  renderDailyLegend(agg.models);
 
   const dayTotals = agg.days.map(d =>
     agg.models.reduce((s, m) => s + (agg.tokens[m][d] || 0), 0)
@@ -152,6 +155,13 @@ function renderDailyChart(range, fromDate, toDate) {
   const dayCosts = agg.costs ? agg.days.map(d =>
     agg.models.reduce((s, m) => s + (agg.costs[m][d] || 0), 0)
   ) : null;
+  const chartTotal = dayTotals.reduce((a, b) => a + b, 0);
+  canvasEl.setAttribute(
+    'aria-label',
+    'Daily token usage from ' + fmtDay(agg.days[0]) + ' to ' + fmtDay(agg.days[agg.days.length - 1]) +
+    '. Total ' + fmtN(chartTotal) + ' tokens.'
+  );
+  canvasEl.setAttribute('aria-describedby', 'daily-legend');
 
   const dark = window.matchMedia('(prefers-color-scheme: dark)').matches ||
     document.documentElement.dataset.theme === 'dark';
@@ -204,6 +214,24 @@ function renderDailyChart(range, fromDate, toDate) {
   };
 }
 
+function renderDailyLegend(models) {
+  const legend = document.getElementById('daily-legend');
+  if (!legend) return;
+  legend.innerHTML = '';
+  for (const model of models) {
+    const item = document.createElement('span');
+    item.className = 'chart-legend-item';
+    const swatch = document.createElement('span');
+    swatch.className = 'chart-legend-swatch';
+    swatch.style.background = modelColor(model);
+    const label = document.createElement('span');
+    label.textContent = model;
+    item.appendChild(swatch);
+    item.appendChild(label);
+    legend.appendChild(item);
+  }
+}
+
 function openDailyModal(agg, day, dayTotals, dayCosts) {
   const total = dayTotals[agg.days.indexOf(day)];
   const costTotal = dayCosts ? dayCosts[agg.days.indexOf(day)] : 0;
@@ -251,6 +279,11 @@ function newDailyPie(id, values, models, fmtFn) {
   const canvas = document.getElementById(id);
   if (!canvas) return null;
   const total = values.reduce((a, b) => a + b, 0);
+  canvas.setAttribute('role', 'img');
+  canvas.setAttribute(
+    'aria-label',
+    models.length + ' models. Total ' + (fmtFn ? fmtFn(total) : String(total)) + '.'
+  );
 
   // Create tooltip element appended to chart's parent container
   const tip = document.createElement('div');
@@ -315,18 +348,45 @@ function buildLabels(id, map, day, models, total, fmtFn) {
   }).join('');
 }
 
+function updateDateScope(sessions) {
+  const el = document.getElementById('date-scope');
+  if (!el) return;
+  if (!globalData) { el.textContent = ''; return; }
+
+  const days = [];
+  for (const s of sessions) {
+    for (const e of (s.log || [])) {
+      if (!e.event && e.at && isInDateRange(e.at)) days.push(localDateStr(e.at));
+    }
+  }
+  if (!days.length) {
+    el.textContent = 'No sessions in this period';
+    return;
+  }
+  days.sort();
+  const first = days[0];
+  const last = days[days.length - 1];
+  const span = first === last ? fmtDay(first) : fmtDay(first) + '–' + fmtDay(last);
+  const count = sessions.length;
+  el.textContent = 'Showing ' + span + ' · ' + count + (count === 1 ? ' session' : ' sessions');
+}
+
 function setRange(range) {
   activeRange = range;
   document.querySelectorAll('.range-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.range === String(range));
+    const active = b.dataset.range === String(range);
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', String(active));
   });
   const customDates = document.querySelector('.custom-dates');
   customDates.hidden = range !== 'custom';
-  if (range !== 'custom') {
-    currentDateFrom = '';
-    currentDateTo = '';
-    renderAll();
+  if (range === 'custom') {
+    applyCustomRange();
+    return;
   }
+  currentDateFrom = '';
+  currentDateTo = '';
+  renderAll();
 }
 
 function applyCustomRange() {
@@ -335,8 +395,8 @@ function applyCustomRange() {
   if (from && to && from <= to) {
     currentDateFrom = from;
     currentDateTo   = to;
-    renderAll();
   }
+  renderAll();
 }
 
 function initDailySection() {
@@ -350,7 +410,8 @@ function initDailySection() {
 
   dailySectionInitialized = true;
 
-  document.querySelectorAll('#daily-section .range-btn').forEach(btn => {
+  document.querySelectorAll('#filter-bars .range-btn').forEach(btn => {
+    btn.setAttribute('aria-pressed', String(btn.classList.contains('active')));
     btn.onclick = () => setRange(btn.dataset.range === '0' ? 0 : btn.dataset.range);
   });
 

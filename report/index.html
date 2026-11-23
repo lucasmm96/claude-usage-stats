@@ -22,12 +22,19 @@
     <h1>Claude Usage Stats</h1>
   </div>
   <div class="load-area">
-    <input type="file" id="file-in" accept=".json" style="display:none">
-    <button class="btn" id="file-btn">Load file</button>
-    <input type="text" id="url-in" placeholder="Raw JSON URL…">
-    <button class="btn btn-primary" id="url-btn">Load URL</button>
-    <button class="btn" id="gh-btn" onclick="openModal()"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.25" y="7" width="9.5" height="6.5" rx="1.75"/><path d="M5.75 7V5.1a2.25 2.25 0 0 1 4.5 0V7"/></svg>Private repo</button>
-    <button class="btn" id="api-btn" onclick="openApiModal()"><svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="3.75" rx="4.75" ry="1.9"/><path d="M3.25 3.75v8.5c0 1.05 2.13 1.9 4.75 1.9s4.75-.85 4.75-1.9v-8.5"/><path d="M3.25 8c0 1.05 2.13 1.9 4.75 1.9S12.75 9.05 12.75 8"/></svg>Database</button>
+    <button class="btn load-menu-trigger" id="open-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="load-menu">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h4l1.2 1.5h5.8v6.5a1.5 1.5 0 0 1-1.5 1.5h-8a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M2.5 4.5V3.5A1.5 1.5 0 0 1 4 2h2.4l1.1 1.5"/></svg>Open
+    </button>
+    <div class="load-menu" id="load-menu">
+      <input type="file" id="file-in" accept=".json" hidden>
+      <button class="btn" id="file-btn">Load file</button>
+      <div class="load-url-row">
+        <input type="text" id="url-in" placeholder="Raw JSON URL…" aria-label="Raw JSON URL">
+        <button class="btn" id="url-btn">Load URL</button>
+      </div>
+      <button class="btn" id="gh-btn" onclick="openModal()"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.25" y="7" width="9.5" height="6.5" rx="1.75"/><path d="M5.75 7V5.1a2.25 2.25 0 0 1 4.5 0V7"/></svg>GitHub repo</button>
+      <button class="btn" id="api-btn" onclick="openApiModal()"><svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="3.75" rx="4.75" ry="1.9"/><path d="M3.25 3.75v8.5c0 1.05 2.13 1.9 4.75 1.9s4.75-.85 4.75-1.9v-8.5"/><path d="M3.25 8c0 1.05 2.13 1.9 4.75 1.9S12.75 9.05 12.75 8"/></svg>Database</button>
+    </div>
     <button class="btn" id="pricing-btn" onclick="openPricingModal()"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11"/><path d="M10.9 5.2H7.1a1.9 1.9 0 0 0 0 3.8h1.8a1.9 1.9 0 0 1 0 3.8H5.1"/></svg>Pricing</button>
     <div id="refresh-indicator" hidden aria-live="polite" aria-atomic="true">
       <span class="ri-dot"></span>
@@ -54,28 +61,47 @@
     <span class="profile-label">Model</span>
     <div id="model-pills"></div>
   </div>
+
+  <div id="date-bar">
+    <span class="profile-label">Period</span>
+    <div class="date-filter" role="group" aria-label="Date range">
+      <button class="range-btn active" data-range="0">Total</button>
+      <button class="range-btn" data-range="30">Latest 30d</button>
+      <button class="range-btn" data-range="month">This Month</button>
+      <button class="range-btn" data-range="today">Today</button>
+      <button class="range-btn" data-range="custom">Custom</button>
+      <div class="custom-dates" hidden>
+        <input type="date" id="date-from" aria-label="From date">
+        <span class="date-sep">—</span>
+        <input type="date" id="date-to" aria-label="To date">
+      </div>
+    </div>
+    <span id="date-scope" class="date-scope" aria-live="polite"></span>
+  </div>
+</div>
+
+<div id="empty-app" class="empty-app">
+  <img src="assets/logo.svg" alt="" class="empty-logo" width="56" height="56">
+  <h2 id="empty-title">Open your usage data</h2>
+  <p id="empty-desc">Load the JSON log produced by the status line hook, or connect a URL, GitHub repo, or database.</p>
+  <div class="empty-actions">
+    <button class="btn btn-primary" id="empty-file-btn" type="button">Load file</button>
+    <button class="btn" id="empty-url-btn" type="button">Use a URL</button>
+  </div>
 </div>
 
 <div id="daily-section" hidden>
   <div class="daily-header">
     <h2>Daily Tokens</h2>
-    <div class="date-filter">
-      <button class="range-btn" data-range="0">Total</button>
-      <button class="range-btn" data-range="30">Latest 30d</button>
-      <button class="range-btn active" data-range="month">This Month</button>
-      <button class="range-btn" data-range="today">Today</button>
-      <button class="range-btn" data-range="custom">Custom</button>
-      <div class="custom-dates" hidden>
-        <input type="date" id="date-from">
-        <span class="date-sep">—</span>
-        <input type="date" id="date-to">
-      </div>
-    </div>
   </div>
+  <div id="daily-legend" class="chart-legend"></div>
   <div class="daily-chart-wrap">
-    <canvas id="c-daily"></canvas>
+    <canvas id="c-daily" role="img"></canvas>
     <div id="daily-tooltip" class="chart-tooltip"></div>
-    <div class="daily-empty" style="display:none">No data in this period</div>
+    <div class="daily-empty" style="display:none">
+      <span>No data in this period</span>
+      <button class="btn btn-sm" id="daily-show-all-btn" type="button" onclick="clearAllFilters()">Show all</button>
+    </div>
   </div>
 </div>
 
@@ -87,7 +113,7 @@
 <!-- Pricing modal -->
 <div class="modal-overlay" id="pricing-modal-overlay">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pricing-modal-title">
-    <button class="modal-close" onclick="closePricingModal()" aria-label="Close">&times;</button>
+    <button class="modal-close" onclick="closePricingModal()" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8"/><path d="M12 4l-8 8"/></svg></button>
     <h2 id="pricing-modal-title">Token Pricing</h2>
     <p class="subtitle">Set prices per model (USD per million tokens). Models without prices don't contribute to cost estimates.</p>
 
@@ -141,7 +167,7 @@
     </div>
 
     <div class="field">
-      <button type="button" class="btn btn-sm" id="p-resync-btn" onclick="resyncPrices()">&#8635; Resync prices (Portkey)</button>
+      <button type="button" class="btn btn-sm" id="p-resync-btn" onclick="resyncPrices()"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.5-3.5"/><path d="M13 3v3h-3"/></svg>Resync prices (Portkey)</button>
       <div id="p-resync-status" role="status" aria-live="polite"></div>
     </div>
 
@@ -166,7 +192,7 @@
 <!-- Private repo modal -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
+    <button class="modal-close" onclick="closeModal()" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8"/><path d="M12 4l-8 8"/></svg></button>
     <h2 id="modal-title">GitHub Private Repository</h2>
     <p class="subtitle">Credentials stay in your browser only — never sent anywhere except GitHub's API.</p>
 
@@ -213,7 +239,7 @@
 <!-- Database / API modal -->
 <div class="modal-overlay" id="api-modal-overlay">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="api-modal-title">
-    <button class="modal-close" onclick="closeApiModal()" aria-label="Close">&times;</button>
+    <button class="modal-close" onclick="closeApiModal()" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8"/><path d="M12 4l-8 8"/></svg></button>
     <h2 id="api-modal-title">Database (API)</h2>
     <p class="subtitle">Connect to the usage stats API backed by Neon PostgreSQL. Credentials stay in your browser only.</p>
 
@@ -251,7 +277,7 @@
 <!-- Daily bar detail modal (pie charts) -->
 <div class="modal-overlay" id="daily-modal-overlay">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="daily-modal-title">
-    <button class="modal-close" onclick="closeDailyModal()" aria-label="Close">&times;</button>
+    <button class="modal-close" onclick="closeDailyModal()" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8"/><path d="M12 4l-8 8"/></svg></button>
     <h2 id="daily-modal-title">Daily Tokens</h2>
     <p class="subtitle" id="daily-modal-subtitle"></p>
     <div class="daily-modal-pies" id="daily-modal-pies">
@@ -270,6 +296,8 @@
     </div>
   </div>
 </div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="js/config.js"></script>
 <script src="js/pricing.js"></script>

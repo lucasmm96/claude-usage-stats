@@ -149,7 +149,7 @@ function openPricingModal() {
       const opt = document.createElement('option');
       opt.value = m;
       const hasPrice = data.prices[m] !== undefined;
-      opt.textContent = hasPrice ? `${m} — $${data.prices[m].input}/MTok` : `⚠︎ ${m}`;
+      opt.textContent = hasPrice ? `${m} — $${data.prices[m].input}/MTok` : m;
       optg.appendChild(opt);
     }
     select.appendChild(optg);
@@ -241,7 +241,7 @@ function updateUnpricedBadge() {
     if (hasPrice) {
       opt.textContent = `${opt.value} — $${data.prices[opt.value].input}/MTok`;
     } else {
-      opt.textContent = `⚠︎ ${opt.value}`;
+      opt.textContent = opt.value;
       unpricedCount++;
     }
   }
@@ -268,9 +268,9 @@ function rebuildConfiguredList(data) {
     const item = document.createElement('div');
     item.className = 'price-item';
     const src = price.source || 'legacy';
-    // Inline source icon, same style as the model dropdown (e.g. "⚠ Model")
+    // Inline source icon in the configured list (SVG, one stroke language).
     const isManual = src === 'manual' || src === 'legacy';
-    const srcIcon = isManual ? '✎' : (price.autoFailed ? '⚠︎' : '✓');
+    const srcIcon = isManual ? ICONS.edit : (price.autoFailed ? ICONS.warning : ICONS.check);
     const srcCls = isManual ? 'src-manual' : (price.autoFailed ? 'src-fail' : 'src-auto');
     const srcTitle = src === 'manual' ? 'Manual price'
       : price.autoFailed ? 'Auto-population failed (not found on Portkey)'
@@ -284,7 +284,7 @@ function rebuildConfiguredList(data) {
       <span class="num">${price.cacheWrite}</span>
       <span class="num">${price.output}</span>
       <span class="price-meta" title="Last sync: ${syncLabel}">${syncLabel}</span>
-      <button class="btn-remove" title="Remove" onclick="removeModel('${model.replace(/'/g, "\\'")}')">✕</button>
+      <button class="btn-remove" title="Remove" onclick="removeModel('${model.replace(/'/g, "\\'")}')">${ICONS.close}</button>
     `;
     list.appendChild(item);
   }
@@ -295,12 +295,59 @@ function rebuildConfiguredList(data) {
 
 function removeModel(modelName) {
   const data = getPricingData();
+  const removed = data.prices[modelName];
+  if (removed === undefined) return;
   delete data.prices[modelName];
   savePricingData(data);
+  updatePricingButton();
   rebuildConfiguredList(data);
   const select = document.getElementById('p-model-select');
   select.value = '__new__';
   loadModelPrices();
+  updateUnpricedBadge();
+  if (globalData) renderAll();
+
+  showUndoToast('Price removed for ' + modelName, () => {
+    const restored = getPricingData();
+    restored.prices[modelName] = removed;
+    savePricingData(restored);
+    updatePricingButton();
+    rebuildConfiguredList(restored);
+    select.value = modelName;
+    loadModelPrices();
+    updateUnpricedBadge();
+    if (globalData) renderAll();
+  });
+}
+
+let _toastTimer = null;
+
+function hideToast() {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.classList.remove('show');
+  toast.innerHTML = '';
+}
+
+function showUndoToast(message, onUndo) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.innerHTML = '';
+  const text = document.createElement('span');
+  text.textContent = message;
+  const action = document.createElement('button');
+  action.type = 'button';
+  action.className = 'toast-action';
+  action.textContent = 'Undo';
+  action.onclick = () => {
+    hideToast();
+    onUndo();
+  };
+  toast.appendChild(text);
+  toast.appendChild(action);
+  toast.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(hideToast, 6000);
 }
 
 function closePricingModal() {
@@ -390,7 +437,7 @@ async function resyncPrices() {
   } catch (e) {
     if (status) status.textContent = 'Sync failed: ' + e.message;
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '↻ Resync prices (Portkey)'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = ICONS.resync + 'Resync prices (Portkey)'; }
     _resyncing = false;
   }
 }

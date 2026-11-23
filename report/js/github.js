@@ -127,10 +127,10 @@ function setModalStatus(type, msg) {
 function updateGhButton(connected) {
   const btn = document.getElementById('gh-btn');
   if (connected) {
-    btn.innerHTML = ICONS.lock + 'Private repo' + ICONS.check;
+    btn.innerHTML = ICONS.lock + 'GitHub repo' + ICONS.check;
     btn.classList.add('btn-connected');
   } else {
-    btn.innerHTML = ICONS.lock + 'Private repo';
+    btn.innerHTML = ICONS.lock + 'GitHub repo';
     btn.classList.remove('btn-connected');
   }
 }

@@ -12,22 +12,29 @@ const TC = {
 };
 
 // ---- Model colors ----
-// Colors are chosen for the full set of models detected in the data (built by
-// buildModelColors), so none repeat and each stays stable regardless of the
-// active date range. Hues are spread exactly evenly around the wheel (i·360/N),
-// the maximum possible minimum gap (360/N), which keeps colors visually
-// distinct even with many models.
+// A fixed, low-saturation palette keeps model colors distinct without the
+// neon primaries of an evenly-spaced HSL wheel. Hues stay stable per model;
+// lightness adapts to the active theme.
+const MODEL_HUES = [210, 150, 25, 280, 345, 185, 45, 320, 115, 240, 0, 195, 80, 265, 160, 305];
 let _modelColorMap = new Map();
+
+function modelThemeIsDark() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ||
+    document.documentElement.dataset.theme === 'dark';
+}
 
 function buildModelColors(names) {
   const set = new Set(names);
   set.add('(unknown)');
   const sorted = [...set].filter(Boolean).sort();
-  const n = sorted.length;
+  const dark = modelThemeIsDark();
+  const saturation = dark ? 58 : 62;
+  const baseLightness = dark ? 64 : 42;
   _modelColorMap = new Map();
   sorted.forEach((name, i) => {
-    const h = n > 1 ? Math.round((i * 360) / n) % 360 : 0;
-    _modelColorMap.set(name, `hsl(${h}, 72%, 52%)`);
+    const ring = Math.floor(i / MODEL_HUES.length);
+    const lightness = Math.max(30, Math.min(74, baseLightness + (ring % 2 ? 8 : 0)));
+    _modelColorMap.set(name, `hsl(${MODEL_HUES[i % MODEL_HUES.length]} ${saturation}% ${lightness}%)`);
   });
 }
 
@@ -62,3 +69,9 @@ Chart.register(compactPlugin);
 Chart.defaults.font.family = cssVar('--font-sans');
 Chart.defaults.font.size = 11;
 Chart.defaults.color = cssVar('--muted');
+
+// Rebuild model colors and charts when the OS theme changes.
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  Chart.defaults.color = cssVar('--muted');
+  if (typeof renderAll === 'function' && typeof globalData !== 'undefined' && globalData) renderAll();
+});
