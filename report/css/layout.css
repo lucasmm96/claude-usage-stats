@@ -363,6 +363,7 @@ h1 { font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.01em; }
 /* Pie-slice tooltip (modal): wraps long model names instead of clipping */
 .chart-tooltip.pie-tip {
   max-width: 320px;
+  white-space: normal;
   word-break: break-word;
 }
 
