@@ -373,7 +373,7 @@ h1 { font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.01em; }
 }
 .daily-modal-pies-inner {
   display: flex;
-  gap: var(--space-4);
+  gap: var(--space-6);
   flex-wrap: wrap;
   justify-content: center;
 }
