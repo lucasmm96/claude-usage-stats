@@ -254,7 +254,7 @@ function newDailyPie(id, values, models, fmtFn) {
 
   // Create tooltip element appended to chart's parent container
   const tip = document.createElement('div');
-  tip.className = 'chart-tooltip';
+  tip.className = 'chart-tooltip pie-tip';
   tip.style.display = 'none';
   canvas.parentElement.appendChild(tip);
 

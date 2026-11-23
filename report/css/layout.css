@@ -343,9 +343,7 @@ h1 { font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.01em; }
   padding: 7px 10px;
   font-size: var(--text-xs);
   line-height: 1.55;
-  box-shadow: var(--shadow-lg);
-  max-width: 320px;
-  word-break: break-word;
+  white-space: nowrap;
 }
 .chart-tooltip .tt-title { font-weight: 600; }
 .chart-tooltip .tt-total {
@@ -361,6 +359,11 @@ h1 { font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.01em; }
   border-radius: 2px;
   flex-shrink: 0;
   display: inline-block;
+}
+/* Pie-slice tooltip (modal): wraps long model names instead of clipping */
+.chart-tooltip.pie-tip {
+  max-width: 320px;
+  word-break: break-word;
 }
 
 /* --- Modal: daily bar detail pies --- */
