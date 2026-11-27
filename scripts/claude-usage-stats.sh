@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# CLAUDE_USAGE_STATS_STATE_DIR lets a launcher keep logs/config outside the clone.
+SCRIPT_DIR="${CLAUDE_USAGE_STATS_STATE_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 input=$(cat)
 PPID_FALLBACK="$PPID"
 
